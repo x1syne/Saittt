@@ -384,13 +384,15 @@ app.get('/health', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Для Vercel важно экспортировать app
+// ЭТА СТРОКА ОБЯЗАТЕЛЬНА для Vercel!
 module.exports = app;
 
 // Локальный запуск (если не на Vercel)
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`
+        console.log(`🚀 Сервер запущен на порту ${PORT}`);
+    });
+}
     ============================================
     🚀 SoundMate Backend запущен!
     
