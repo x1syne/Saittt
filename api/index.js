@@ -393,17 +393,4 @@ if (require.main === module) {
         console.log(`🚀 Сервер запущен на порту ${PORT}`);
     });
 }
-    🚀 SoundMate Backend запущен!
     
-    🌐 Локальный адрес: http://localhost:${PORT}
-    🎵 Spotify Auth: /auth/spotify
-    🔧 Тест API: /test-api
-    
-    📊 Конфигурация:
-    • Client ID: ${SPOTIFY_CONFIG.clientId ? '✅ Установлен' : '❌ Отсутствует'}
-    • Redirect URI: ${SPOTIFY_CONFIG.redirectUri}
-    
-    ============================================
-        `);
-    });
-}
