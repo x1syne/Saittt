@@ -189,3 +189,4 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById(id).addEventListener('input', updatePromptFromHymnBuilder);
     });
 });
+
