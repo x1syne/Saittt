@@ -393,7 +393,6 @@ if (require.main === module) {
         console.log(`🚀 Сервер запущен на порту ${PORT}`);
     });
 }
-    ============================================
     🚀 SoundMate Backend запущен!
     
     🌐 Локальный адрес: http://localhost:${PORT}
