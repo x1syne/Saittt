@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SoundMate Callback</title>
+</head>
+<body>
+    <h1>Обработка авторизации Spotify...</h1>
+    <script>
+        // Получаем данные из URL
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const name = params.get('name');
+
+        if (token) {
+            localStorage.setItem('spotify_token', token);
+            localStorage.setItem('spotify_name', name);
+            window.location.href = 'index.html';
+        } else {
+            document.body.innerHTML += '<p>Ошибка авторизации</p>';
+        }
+    </script>
+</body>
+</html>
