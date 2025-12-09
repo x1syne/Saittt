@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - SoundMate</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Стили из главной страницы + дополнительные */
+        .user-profile {
+            padding: 120px 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+        }
+
+        .profile-info h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .music-taste {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .taste-card {
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация как в главной -->
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">Sound<span>Mate</span></a>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="studio.html">AI Студия</a>
+            <a href="community.html">Сообщество</a>
+            <a href="dashboard.html" class="active">Мой профиль</a>
+        </div>
+        <button class="nav-cta" onclick="logout()">Выйти</button>
+    </nav>
+
+    <div class="user-profile">
+        <div class="profile-header">
+            <img id="userAvatar" class="profile-avatar" src="https://via.placeholder.com/120" alt="Аватар">
+            <div class="profile-info">
+                <h1 id="userName">Загрузка...</h1>
+                <p id="userEmail" style="color: #ccc;">Загрузка...</p>
+            </div>
+        </div>
+
+        <div class="profile-stats">
+            <div class="stat-card">
+                <div class="stat-number" id="topArtistsCount">0</div>
+                <div class="stat-label">Любимых артистов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="topTracksCount">0</div>
+                <div class="stat-label">Любимых треков</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="playlistsCount">0</div>
+                <div class="stat-label">Плейлистов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="matchScore">0%</div>
+                <div class="stat-label">Совместимость</div>
+            </div>
+        </div>
+
+        <div class="music-taste">
+            <div class="taste-card">
+                <h3>Топ артистов</h3>
+                <ul id="topArtistsList"></ul>
+            </div>
+            <div class="taste-card">
+                <h3>Топ треков</h3>
+                <ul id="topTracksList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://saittt.vercel.app';
+
+        // Проверяем авторизацию
+        function checkAuth() {
+            const token = localStorage.getItem('spotify_token');
+            if (!token) {
+                console.log('No token found, redirecting to home');
+                window.location.href = 'index.html';
+                return null;
+            }
+            return token;
+        }
+
+        // Загружаем данные пользователя
+        async function loadUserData() {
+            const token = checkAuth();
+            if (!token) return;
+
+            try {
+                // Загружаем информацию о пользователе
+                const userInfo = await fetch(`${BACKEND_URL}/api/user-info`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!userInfo.ok) {
+                    throw new Error('Failed to load user info');
+                }
+
+                const userData = await userInfo.json();
+                
+                // Обновляем профиль
+                document.getElementById('userName').textContent = userData.user.displayName || 'Spotify User';
+                document.getElementById('userEmail').textContent = userData.user.email || '';
+                if (userData.user.image) {
+                    document.getElementById('userAvatar').src = userData.user.image;
+                }
+
+                // Загружаем топ-треки
+                const tracksResponse = await fetch(`${BACKEND_URL}/api/top-tracks`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (tracksResponse.ok) {
+                    const tracksData = await tracksResponse.json();
+                    displayTracks(tracksData.tracks);
+                }
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                
+                // Если токен невалидный, очищаем и перенаправляем
+                if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                    localStorage.clear();
+                    alert('Сессия истекла. Пожалуйста, войдите снова.');
+                    window.location.href = 'index.html';
+                } else {
+                    alert('Ошибка загрузки данных: ' + error.message);
+                }
+            }
+        }
+
+        function displayTracks(tracks) {
+            if (!tracks || tracks.length === 0) return;
+
+            document.getElementById('topTracksCount').textContent = tracks.length;
+            
+            // Извлекаем уникальных артистов
+            const artists = [...new Set(tracks.map(t => t.artist))];
+            document.getElementById('topArtistsCount').textContent = artists.length;
+
+            // Показываем топ артистов
+            const artistsList = document.getElementById('topArtistsList');
+            artistsList.innerHTML = '';
+            artists.slice(0, 5).forEach(artist => {
+                const li = document.createElement('li');
+                li.textContent = artist;
+                li.style.padding = '8px 0';
+                li.style.borderBottom = '1px solid #333';
+                artistsList.appendChild(li);
+            });
+
+            // Показываем топ треков
+            const tracksList = document.getElementById('topTracksList');
+            tracksList.innerHTML = '';
+            tracks.slice(0, 5).forEach(track => {
+                const li = document.createElement('li');
+                li.textContent = `${track.name} - ${track.artist}`;
+                li.style.padding = '8px 0';
+                li.style.borderBottom = '1px solid #333';
+                tracksList.appendChild(li);
+            });
+
+            // Рассчитываем случайный процент совместимости (для демо)
+            document.getElementById('matchScore').textContent = Math.floor(Math.random() * 30 + 70) + '%';
+            document.getElementById('playlistsCount').textContent = Math.floor(Math.random() * 20 + 5);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+
+        // Загружаем данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+        });
+    </script>
+</body>
+</html>

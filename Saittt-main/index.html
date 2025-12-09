@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundMate | AI-платформа для музыки</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Altermind-inspired styles */
+        :root {
+            --primary: #000000;
+            --secondary: #ffffff;
+            --accent: #00ff88;
+            --gray: #1a1a1a;
+            --light-gray: #2a2a2a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--primary);
+            color: var(--secondary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Навигация */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+        }
+
+        .nav-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--secondary);
+            text-decoration: none;
+        }
+
+        .nav-logo span {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-link {
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--accent);
+        }
+
+        .nav-cta {
+            background: var(--accent);
+            color: var(--primary);
+            padding: 10px 24px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Главная секция */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            position: relative;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+        }
+
+        .hero-content {
+            max-width: 600px;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            background: var(--light-gray);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: 56px;
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: #cccccc;
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--primary);
+            padding: 16px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--secondary);
+            padding: 16px 32px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: 1px solid var(--light-gray);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Анимированный фон */
+        .hero-background {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: radial-gradient(circle at center, var(--accent) 0%, transparent 70%);
+            opacity: 0.1;
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.15; transform: scale(1.1); }
+        }
+
+        /* Сетка возможностей */
+        .features {
+            padding: 100px 40px;
+            background: var(--gray);
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-title {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: #cccccc;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--light-gray);
+            padding: 40px;
+            border-radius: 20px;
+            transition: transform 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .feature-description {
+            color: #cccccc;
+            font-size: 16px;
+        }
+
+        /* Секция статистики */
+        .stats {
+            padding: 80px 40px;
+            background: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #cccccc;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Секция призыва к действию */
+        .cta {
+            padding: 100px 40px;
+            background: linear-gradient(135deg, var(--gray) 0%, var(--primary) 100%);
+            text-align: center;
+        }
+
+        .cta-title {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .cta-subtitle {
+            font-size: 18px;
+            color: #cccccc;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Подвал */
+        .footer {
+            padding: 60px 40px;
+            background: var(--primary);
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-logo {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .footer-logo span {
+            color: var(--accent);
+        }
+
+        .footer-description {
+            color: #cccccc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer-links h4 {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .footer-links a {
+            display: block;
+            color: #cccccc;
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <a href="#" class="nav-logo">Sound<span>Mate</span></a>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Главная</a>
+            <a href="studio.html" class="nav-link">AI Студия</a>
+            <a href="community.html" class="nav-link">Сообщество</a>
+            <a href="#pricing" class="nav-link">Тарифы</a>
+        </div>
+        <a href="studio.html" class="nav-cta">Начать</a>
+    </nav>
+
+    <!-- Главная секция -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">AI-ПЛАТФОРМА ДЛЯ МУЗЫКИ</div>
+            <h1 class="hero-title">Где музыка встречает искусственный интеллект</h1>
+            <p class="hero-subtitle">Найдите своих музыкальных единомышленников, создавайте музыку с передовым ИИ и присоединяйтесь к глобальному сообществу музыкальных новаторов.</p>
+            <div class="hero-actions">
+                <button onclick="loginWithSpotify()" class="btn-primary">
+                    <i class="fab fa-spotify"></i>
+                    Войти через Spotify
+                </button>
+                <button class="btn-secondary">Смотреть демо</button>
+            </div>
+        </div>
+        <div class="hero-background"></div>
+    </section>
+
+    <!-- Секция возможностей -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2 class="section-title">Умные музыкальные возможности</h2>
+            <p class="section-subtitle">На основе продвинутых AI-алгоритмов, которые понимают вашу уникальную музыкальную идентичность</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <h3 class="feature-title">AI-подбор</h3>
+                <p class="feature-description">Наши нейросети анализируют ваш музыкальный вкус, чтобы найти идеальных collaborators и друзей с похожими предпочтениями.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3 class="feature-title">Умные композиции</h3>
+                <p class="feature-description">Создавайте оригинальные музыкальные треки с помощью ИИ, адаптированные под ваш стиль и предпочтения.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="feature-title">Живые коллаборации</h3>
+                <p class="feature-description">Сессии совместного создания музыки в реальном времени с артистами со всего мира и AI-продюсерами.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Секция статистики -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat">
+                <div class="stat-number">50K+</div>
+                <div class="stat-label">Активных пользователей</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">1.2M+</div>
+                <div class="stat-label">Созданных песен</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">95%</div>
+                <div class="stat-label">Точность подбора</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">AI-помощник</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Секция призыва к действию -->
+    <section class="cta">
+        <h2 class="cta-title">Готовы революционизировать ваш музыкальный путь?</h2>
+        <p class="cta-subtitle">Присоединяйтесь к тысячам музыкантов и любителей музыки, которые уже создают, соединяются и инноваруют с SoundMate.</p>
+        <button class="btn-primary">Начать бесплатный пробный период</button>
+    </section>
+
+    <!-- Подвал -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <div class="footer-logo">Sound<span>Mate</span></div>
+                <p class="footer-description">Будущее музыкального сотрудничества, основанное на искусственном интеллекте и человеческом творчестве.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Продукт</h4>
+                <a href="#">Возможности</a>
+                <a href="studio.html">AI Студия</a>
+                <a href="community.html">Сообщество</a>
+                <a href="#pricing">Тарифы</a>
+                <a href="#">API</a>
+            </div>
+            <div class="footer-links">
+                <h4>Компания</h4>
+                <a href="#">О нас</a>
+                <a href="#">Блог</a>
+                <a href="#">Карьера</a>
+                <a href="#">Контакты</a>
+            </div>
+            <div class="footer-links">
+                <h4>Правовая информация</h4>
+                <a href="#">Конфиденциальность</a>
+                <a href="#">Условия</a>
+                <a href="#">Безопасность</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Конфигурация бэкенда
+        const BACKEND_URL = 'https://saittt.vercel.app';
+
+        // Функция авторизации через Spotify
+        function loginWithSpotify() {
+            console.log('Начинаем авторизацию через Spotify...');
+            window.location.href = `${BACKEND_URL}/auth/spotify`;
+        }
+
+        // Простая анимация при прокрутке
+        document.addEventListener('DOMContentLoaded', function() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+
+            document.querySelectorAll('.feature-card').forEach(card => {
+                card.style.opacity = 0;
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'all 0.6s ease-out';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>

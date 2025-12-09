@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Студия - SoundMate</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        /* Навигация */
+        .navbar {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #00ff88;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .credits-badge {
+            background: #00ff88;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Основной контент */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-title {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+        }
+
+        .page-subtitle {
+            color: #ccc;
+            font-size: 1.2rem;
+        }
+
+        /* Сетка студии */
+        .studio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Левая колонка - Создание */
+        .creation-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid #333;
+        }
+
+        .tier-badge {
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            color: #000;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .template-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .template-card:hover {
+            border-color: #00ff88;
+            transform: translateY(-2px);
+        }
+
+        .template-card.premium {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 204, 255, 0.1));
+            border: 1px solid #00ff88;
+        }
+
+        .template-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .premium-badge {
+            background: #ffd700;
+            color: #000;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Правая колонка - Генерация */
+        .generation-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid #333;
+        }
+
+        .prompt-section {
+            margin-bottom: 2rem;
+        }
+
+        .prompt-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+        }
+
+        .prompt-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 1rem;
+            color: #fff;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+
+        .prompt-input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .option-group {
+            margin-bottom: 1rem;
+        }
+
+        .option-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .option-select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            color: #000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Панель прогресса */
+        .progress-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid #333;
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .progress-time {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #00ff88, #00ccff);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .progress-step {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .step-complete {
+            color: #00ff88;
+        }
+
+        .step-active {
+            color: #00ccff;
+            font-weight: bold;
+        }
+
+        /* Результат */
+        .result-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid #333;
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .audio-player {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .track-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        /* Апгрейд панель */
+        .upgrade-panel {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 204, 255, 0.1));
+            border: 1px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .upgrade-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #00ff88;
+        }
+
+        .upgrade-features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-item {
+            text-align: left;
+            padding: 0.5rem 0;
+        }
+
+        .feature-item i {
+            color: #00ff88;
+            margin-right: 0.5rem;
+        }
+
+        .upgrade-btn {
+            background: #00ff88;
+            color: #000;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-logo">SoundMate</div>
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Главная</a>
+            <a href="studio.html" class="nav-link">AI Студия</a>
+            <a href="community.html" class="nav-link">Сообщества</a>
+            <a href="#" class="nav-link">Матчинг</a>
+        </div>
+        <div class="user-menu">
+            <div class="credits-badge">🎵 3/5 генераций</div>
+            <div class="user-avatar">👤</div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">AI Музыкальная Студия</h1>
+            <p class="page-subtitle">Создавайте уникальную музыку с помощью искусственного интеллекта</p>
+        </div>
+
+        <!-- Сетка студии -->
+        <div class="studio-grid">
+            <!-- Левая колонка - Шаблоны -->
+            <div class="creation-panel">
+                <div class="tier-badge">🆓 БЕСПЛАТНАЯ ВЕРСИЯ</div>
+
+                <h3>Выберите шаблон</h3>
+                <div class="template-grid">
+                    <div class="template-card" onclick="selectTemplate('school_hymn')">
+                        <div class="template-icon">🎓</div>
+                        <h4>Школьный гимн</h4>
+                        <p>Официальный торжественный гимн</p>
+                    </div>
+
+                    <div class="template-card" onclick="selectTemplate('lofi')">
+                        <div class="template-icon">☕</div>
+                        <h4>Lofi биты</h4>
+                        <p>Расслабляющая фоновая музыка</p>
+                    </div>
+
+                    <div class="template-card premium" onclick="showUpgrade()">
+                        <div class="template-icon">🎬</div>
+                        <h4>Киносаундтрек</h4>
+                        <p>Эпическая оркестровая музыка</p>
+                        <div class="premium-badge">PREMIUM</div>
+                    </div>
+
+                    <div class="template-card premium" onclick="showUpgrade()">
+                        <div class="template-icon">💃</div>
+                        <h4>Танцевальный хит</h4>
+                        <p>Энергичная электронная музыка</p>
+                        <div class="premium-badge">PREMIUM</div>
+                    </div>
+                </div>
+
+                <!-- Конструктор гимнов -->
+                <div id="hymnBuilder" style="display: none;">
+                    <h4>Настройки гимна</h4>
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <label class="option-label">Тип гимна</label>
+                            <select class="option-select" id="hymnType">
+                                <option value="official">Официальный</option>
+                                <option value="modern">Современный</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="option-label">Вокал</label>
+                            <select class="option-select" id="hymnVocal">
+                                <option value="mixed">Смешанный хор</option>
+                                <option value="male">Мужской</option>
+                                <option value="female">Женский</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="option-label">Стиль</label>
+                            <select class="option-select" id="hymnStyle">
+                                <option value="orchestral">Оркестровый</option>
+                                <option value="rock">Рок-гимн</option>
+                            </select>
+                        </div>
+                        <div class="option-group">
+                            <label class="option-label">Настроение</label>
+                            <select class="option-select" id="hymnMood">
+                                <option value="inspiring">Вдохновляющее</option>
+                                <option value="proud">Гордое</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="option-group">
+                        <label class="option-label">Название школы</label>
+                        <input type="text" class="option-select" id="schoolName" placeholder="Введите название школы">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - Генерация -->
+            <div class="generation-panel">
+                <h3>Создание музыки</h3>
+
+                <div class="prompt-section">
+                    <label class="prompt-label">Описание музыки:</label>
+                    <textarea class="prompt-input" id="musicPrompt" placeholder="Опишите музыку, которую хотите создать... Например: 'Торжественный гимн для школы с оркестром и хором'"></textarea>
+                </div>
+
+                <div class="options-grid">
+                    <div class="option-group">
+                        <label class="option-label">Стиль</label>
+                        <select class="option-select" id="musicStyle">
+                            <option value="orchestral">Оркестровый</option>
+                            <option value="pop">Поп</option>
+                            <option value="rock">Рок</option>
+                            <option value="lofi">Lofi</option>
+                            <option value="electronic">Электронный</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label class="option-label">Длительность</label>
+                        <select class="option-select" id="musicDuration">
+                            <option value="60">1 минута</option>
+                            <option value="120" selected>2 минуты</option>
+                            <option value="180">3 минуты (Premium)</option>
+                            <option value="240">4 минуты (Premium)</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label class="option-label">Настроение</label>
+                        <select class="option-select" id="musicMood">
+                            <option value="inspiring">Вдохновляющее</option>
+                            <option value="happy">Радостное</option>
+                            <option value="calm">Спокойное</option>
+                            <option value="epic">Эпическое</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label class="option-label">Инструменты</label>
+                        <select class="option-select" id="musicInstruments">
+                            <option value="orchestra">Оркестр</option>
+                            <option value="piano">Фортепиано</option>
+                            <option value="guitar">Гитары</option>
+                            <option value="electronic">Синтезаторы</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="generate-btn" onclick="generateMusic()">
+                    <i class="fas fa-magic"></i> Создать музыку (1 кредит)
+                </button>
+
+                <div class="credits-info" style="text-align: center; margin-top: 1rem; color: #ccc;">
+                    Осталось генераций: <span id="remainingCredits">3</span>/5
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель прогресса -->
+        <div class="progress-panel" id="progressPanel">
+            <div class="progress-header">
+                <div class="progress-title">Создание музыки...</div>
+                <div class="progress-time" id="progressTime">~2:00</div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="progress-steps">
+                <div class="progress-step step-complete">
+                    <div>✅</div>
+                    <div>Подготовка</div>
+                </div>
+                <div class="progress-step step-active" id="step2">
+                    <div>🔄</div>
+                    <div>Генерация</div>
+                </div>
+                <div class="progress-step" id="step3">
+                    <div>⏳</div>
+                    <div>Аранжировка</div>
+                </div>
+                <div class="progress-step" id="step4">
+                    <div>⏳</div>
+                    <div>Мастеринг</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель результата -->
+        <div class="result-panel" id="resultPanel">
+            <div class="result-header">
+                <div class="result-title" id="resultTitle">Ваш гимн готов!</div>
+                <div class="result-actions">
+                    <button class="action-btn" onclick="downloadTrack()">
+                        <i class="fas fa-download"></i> Скачать
+                    </button>
+                    <button class="action-btn" onclick="shareTrack()">
+                        <i class="fas fa-share"></i> Поделиться
+                    </button>
+                    <button class="action-btn" onclick="regenerateTrack()">
+                        <i class="fas fa-redo"></i> Пересоздать
+                    </button>
+                </div>
+            </div>
+
+            <audio controls class="audio-player" id="audioPlayer">
+                Ваш браузер не поддерживает аудио элементы.
+            </audio>
+
+            <div class="track-info">
+                <div class="info-item">
+                    <div class="info-label">Длительность</div>
+                    <div class="info-value" id="trackDuration">2:15</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Стиль</div>
+                    <div class="info-value" id="trackStyle">Оркестровый гимн</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Качество</div>
+                    <div class="info-value" id="trackQuality">Стандартное</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Статус</div>
+                    <div class="info-value">🆓 Бесплатная версия</div>
+                </div>
+            </div>
+
+            <div class="watermark-notice" style="text-align: center; color: #ff6b6b; margin-top: 1rem;">
+                ⚠️ Этот трек содержит аудио-водяной знак. <a href="#" onclick="showUpgrade()" style="color: #00ff88;">Перейти на Premium</a>
+            </div>
+        </div>
+
+        <!-- Панель апгрейда -->
+        <div class="upgrade-panel">
+            <h3 class="upgrade-title">💎 Откройте все возможности Premium!</h3>
+            <div class="upgrade-features">
+                <div class="feature-item">
+                    <i class="fas fa-infinity"></i> Неограниченные генерации
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-star"></i> Высокое качество звука
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-clock"></i> До 4 минут длительности
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-tags"></i> Все стили и шаблоны
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-water"></i> Без водяных знаков
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-bolt"></i> Приоритетная очередь
+                </div>
+            </div>
+            <button class="upgrade-btn" onclick="upgradeToPremium()">
+                Перейти на Premium - $9.99/месяц
+            </button>
+        </div>
+    </div>
+
+    <script src="studio.js"></script>
+</body>
+</html>
