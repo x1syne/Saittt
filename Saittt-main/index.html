@@ -272,6 +272,17 @@
             font-weight: 700;
             color: var(--accent);
             margin-bottom: 8px;
+            counter-reset: num var(--num);
+        }
+
+        .stat-number::after {
+            content: counter(num);
+            animation: countUp 2s ease-out;
+        }
+
+        @keyframes countUp {
+            from { --num: 0; }
+            to { --num: var(--target); }
         }
 
         .stat-label {
@@ -384,14 +395,22 @@
 <body>
     <!-- Навигация -->
     <nav class="navbar">
-        <a href="#" class="nav-logo">Sound<span>Mate</span></a>
+        <a href="index.html" class="nav-logo">Sound<span>Mate</span></a>
         <div class="nav-links">
             <a href="index.html" class="nav-link">Главная</a>
             <a href="studio.html" class="nav-link">AI Студия</a>
             <a href="community.html" class="nav-link">Сообщество</a>
             <a href="#pricing" class="nav-link">Тарифы</a>
         </div>
-        <a href="studio.html" class="nav-cta">Начать</a>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div id="userProfileIcon" style="display: none;">
+                <a href="dashboard.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: white;">
+                    <img id="navUserAvatar" src="" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent);">
+                    <span id="navUserName" style="font-size: 14px; font-weight: 600;"></span>
+                </a>
+            </div>
+            <button id="authButton" class="nav-cta" onclick="handleAuth()">Начать</button>
+        </div>
     </nav>
 
     <!-- Главная секция -->
@@ -446,19 +465,19 @@
     <section class="stats">
         <div class="stats-grid">
             <div class="stat">
-                <div class="stat-number">50K+</div>
+                <div class="stat-number" data-target="1250">0</div>
                 <div class="stat-label">Активных пользователей</div>
             </div>
             <div class="stat">
-                <div class="stat-number">1.2M+</div>
-                <div class="stat-label">Созданных песен</div>
+                <div class="stat-number" data-target="8500">0</div>
+                <div class="stat-label">Созданных треков</div>
             </div>
             <div class="stat">
-                <div class="stat-number">95%</div>
+                <div class="stat-number" data-target="95">0%</div>
                 <div class="stat-label">Точность подбора</div>
             </div>
             <div class="stat">
-                <div class="stat-number">24/7</div>
+                <div class="stat-number" data-target="24">24/7</div>
                 <div class="stat-label">AI-помощник</div>
             </div>
         </div>
@@ -503,17 +522,66 @@
     </footer>
 
     <script>
-        // Конфигурация бэкенда
         const BACKEND_URL = 'https://saittt.vercel.app';
 
-        // Функция авторизации через Spotify
+        // Проверка авторизации при загрузке
+        function checkAuth() {
+            const token = localStorage.getItem('spotify_token');
+            const name = localStorage.getItem('spotify_name');
+            const image = localStorage.getItem('spotify_image');
+
+            if (token && name) {
+                // Пользователь авторизован
+                document.getElementById('userProfileIcon').style.display = 'block';
+                document.getElementById('navUserName').textContent = name;
+                if (image) {
+                    document.getElementById('navUserAvatar').src = image;
+                }
+                document.getElementById('authButton').textContent = 'Dashboard';
+                document.getElementById('authButton').onclick = () => window.location.href = 'dashboard.html';
+            }
+        }
+
+        // Функция авторизации
+        function handleAuth() {
+            const token = localStorage.getItem('spotify_token');
+            if (token) {
+                window.location.href = 'dashboard.html';
+            } else {
+                loginWithSpotify();
+            }
+        }
+
         function loginWithSpotify() {
             console.log('Начинаем авторизацию через Spotify...');
             window.location.href = `${BACKEND_URL}/auth/spotify`;
         }
 
-        // Простая анимация при прокрутке
+        // Анимация счетчиков
+        function animateCounter(element) {
+            const target = parseInt(element.getAttribute('data-target'));
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                
+                const suffix = element.textContent.includes('%') ? '%' : 
+                               element.textContent.includes('/') ? '/7' : '';
+                element.textContent = Math.floor(current) + suffix;
+            }, 16);
+        }
+
+        // Анимация при прокрутке
         document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+
+            // Анимация карточек
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
@@ -529,6 +597,26 @@
                 card.style.transition = 'all 0.6s ease-out';
                 observer.observe(card);
             });
+
+            // Анимация счетчиков при появлении
+            const statsObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const numbers = entry.target.querySelectorAll('.stat-number');
+                        numbers.forEach(num => {
+                            if (!num.classList.contains('animated')) {
+                                num.classList.add('animated');
+                                animateCounter(num);
+                            }
+                        });
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            const statsSection = document.querySelector('.stats');
+            if (statsSection) {
+                statsObserver.observe(statsSection);
+            }
         });
     </script>
 </body>

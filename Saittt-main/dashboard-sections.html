@@ -1,0 +1,306 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PROFILE SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="profileSection" style="display: none;">
+    <h2 class="section-title" style="margin-bottom: 30px;">
+        <i class="fas fa-user"></i> Мой профиль
+    </h2>
+
+    <!-- Profile Card -->
+    <div class="content-card" style="max-width: 800px; margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
+            <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
+            <div style="flex: 1;">
+                <h2 id="profileName" style="margin-bottom: 8px;">Имя пользователя</h2>
+                <p id="profileEmail" style="color: #999; margin-bottom: 12px;">email@example.com</p>
+                <div style="display: flex; gap: 10px;">
+                    <span class="profile-badge">
+                        <i class="fab fa-spotify"></i> Spotify Premium
+                    </span>
+                    <span class="profile-badge" id="profileCountry">
+                        <i class="fas fa-globe"></i> Country
+                    </span>
+                </div>
+            </div>
+            <button onclick="editProfile()" style="padding: 12px 24px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                <i class="fas fa-edit"></i> Редактировать
+            </button>
+        </div>
+
+        <div style="border-top: 1px solid var(--light-gray); padding-top: 20px;">
+            <h3 style="margin-bottom: 15px;">Информация</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                <div>
+                    <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Дата регистрации</p>
+                    <p id="profileJoinDate">-</p>
+                </div>
+                <div>
+                    <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Последний вход</p>
+                    <p id="profileLastLogin">Сегодня</p>
+                </div>
+                <div>
+                    <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Spotify ID</p>
+                    <p id="profileSpotifyId">-</p>
+                </div>
+                <div>
+                    <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Подписчиков</p>
+                    <p id="profileFollowers">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Preferences -->
+    <div class="content-card" style="max-width: 800px;">
+        <h3 style="margin-bottom: 20px;">
+            <i class="fas fa-music"></i> Музыкальные предпочтения
+        </h3>
+        <div id="profileGenres" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <!-- Genres will be added here -->
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- STATS SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="statsSection" style="display: none;">
+    <h2 class="section-title" style="margin-bottom: 30px;">
+        <i class="fas fa-chart-line"></i> Детальная статистика
+    </h2>
+
+    <!-- Time Period Selector -->
+    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <button class="period-btn active" onclick="changePeriod('week')">Неделя</button>
+        <button class="period-btn" onclick="changePeriod('month')">Месяц</button>
+        <button class="period-btn" onclick="changePeriod('year')">Год</button>
+        <button class="period-btn" onclick="changePeriod('all')">Все время</button>
+    </div>
+
+    <!-- Detailed Stats Grid -->
+    <div class="stats-grid" style="margin-bottom: 40px;">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-play"></i></div>
+            <div class="stat-value" id="statsPlays">0</div>
+            <div class="stat-label">Прослушиваний</div>
+            <div class="stat-change" id="statsPlaysChange">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-headphones"></i></div>
+            <div class="stat-value" id="statsMinutes">0</div>
+            <div class="stat-label">Минут музыки</div>
+            <div class="stat-change" id="statsMinutesChange">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-compact-disc"></i></div>
+            <div class="stat-value" id="statsAlbums">0</div>
+            <div class="stat-label">Альбомов</div>
+            <div class="stat-change" id="statsAlbumsChange">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-list"></i></div>
+            <div class="stat-value" id="statsPlaylists">0</div>
+            <div class="stat-label">Плейлистов</div>
+            <div class="stat-change" id="statsPlaylistsChange">-</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="cards-grid">
+        <div class="chart-container">
+            <h3 style="margin-bottom: 20px;">Активность по дням</h3>
+            <div class="chart-placeholder">
+                <i class="fas fa-chart-bar" style="font-size: 48px; color: #666;"></i>
+            </div>
+        </div>
+        <div class="chart-container">
+            <h3 style="margin-bottom: 20px;">Распределение жанров</h3>
+            <div class="chart-placeholder">
+                <i class="fas fa-chart-pie" style="font-size: 48px; color: #666;"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MUSIC SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="musicSection" style="display: none;">
+    <h2 class="section-title" style="margin-bottom: 30px;">
+        <i class="fas fa-music"></i> Моя музыка
+    </h2>
+
+    <!-- Tabs -->
+    <div style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid var(--light-gray);">
+        <button class="tab-btn active" onclick="changeMusicTab('tracks')">
+            <i class="fas fa-music"></i> Треки
+        </button>
+        <button class="tab-btn" onclick="changeMusicTab('artists')">
+            <i class="fas fa-microphone"></i> Артисты
+        </button>
+        <button class="tab-btn" onclick="changeMusicTab('albums')">
+            <i class="fas fa-compact-disc"></i> Альбомы
+        </button>
+        <button class="tab-btn" onclick="changeMusicTab('playlists')">
+            <i class="fas fa-list"></i> Плейлисты
+        </button>
+    </div>
+
+    <!-- Tracks Tab -->
+    <div id="tracksTab" class="music-tab">
+        <div id="musicTracksList" class="content-card">
+            <!-- Tracks will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Artists Tab -->
+    <div id="artistsTab" class="music-tab" style="display: none;">
+        <div id="musicArtistsList" class="content-card">
+            <!-- Artists will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Albums Tab -->
+    <div id="albumsTab" class="music-tab" style="display: none;">
+        <div id="musicAlbumsList" class="content-card">
+            <!-- Albums will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Playlists Tab -->
+    <div id="playlistsTab" class="music-tab" style="display: none;">
+        <div id="musicPlaylistsList" class="content-card">
+            <!-- Playlists will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MATCHES SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="matchesSection" style="display: none;">
+    <h2 class="section-title" style="margin-bottom: 30px;">
+        <i class="fas fa-users"></i> Музыкальные совпадения
+    </h2>
+
+    <div class="content-card" style="text-align: center; padding: 60px 40px; margin-bottom: 30px;">
+        <i class="fas fa-search" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+        <h3 style="margin-bottom: 15px;">Найдите своих музыкальных близнецов</h3>
+        <p style="color: #999; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto;">
+            Мы анализируем ваши музыкальные предпочтения и находим людей с похожим вкусом
+        </p>
+        <button onclick="findMatches()" style="padding: 15px 40px; background: var(--accent); border: none; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 16px;">
+            <i class="fas fa-magic"></i> Найти совпадения
+        </button>
+    </div>
+
+    <!-- Matches List -->
+    <div id="matchesList" class="cards-grid">
+        <!-- Matches will be loaded here -->
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SETTINGS SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div id="settingsSection" style="display: none;">
+    <h2 class="section-title" style="margin-bottom: 30px;">
+        <i class="fas fa-cog"></i> Настройки
+    </h2>
+
+    <!-- Account Settings -->
+    <div class="content-card" style="max-width: 800px; margin-bottom: 20px;">
+        <h3 style="margin-bottom: 20px;">
+            <i class="fas fa-user-cog"></i> Аккаунт
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--light-gray); border-radius: 10px;">
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Spotify подключение</p>
+                    <p style="color: #999; font-size: 14px;">Управление доступом к Spotify</p>
+                </div>
+                <button onclick="reconnectSpotify()" style="padding: 10px 20px; background: #1DB954; border: none; border-radius: 20px; cursor: pointer; color: white; font-weight: 600;">
+                    <i class="fab fa-spotify"></i> Переподключить
+                </button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--light-gray); border-radius: 10px;">
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Синхронизация данных</p>
+                    <p style="color: #999; font-size: 14px;">Обновить музыкальные данные</p>
+                </div>
+                <button onclick="syncData()" style="padding: 10px 20px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                    <i class="fas fa-sync"></i> Синхронизировать
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Settings -->
+    <div class="content-card" style="max-width: 800px; margin-bottom: 20px;">
+        <h3 style="margin-bottom: 20px;">
+            <i class="fas fa-shield-alt"></i> Приватность
+        </h3>
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Публичный профиль</p>
+                    <p style="color: #999; font-size: 14px;">Другие пользователи могут видеть ваш профиль</p>
+                </div>
+                <input type="checkbox" id="publicProfile" checked style="width: 50px; height: 25px;">
+            </label>
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Показывать статистику</p>
+                    <p style="color: #999; font-size: 14px;">Делиться музыкальной статистикой</p>
+                </div>
+                <input type="checkbox" id="showStats" checked style="width: 50px; height: 25px;">
+            </label>
+            <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 5px;">Поиск совпадений</p>
+                    <p style="color: #999; font-size: 14px;">Участвовать в поиске музыкальных друзей</p>
+                </div>
+                <input type="checkbox" id="allowMatches" checked style="width: 50px; height: 25px;">
+            </label>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="content-card" style="max-width: 800px; border: 1px solid #ff4444;">
+        <h3 style="margin-bottom: 20px; color: #ff4444;">
+            <i class="fas fa-exclamation-triangle"></i> Опасная зона
+        </h3>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <p style="font-weight: 600; margin-bottom: 5px;">Удалить аккаунт</p>
+                <p style="color: #999; font-size: 14px;">Безвозвратно удалить все данные</p>
+            </div>
+            <button onclick="deleteAccount()" style="padding: 10px 20px; background: #ff4444; border: none; border-radius: 20px; cursor: pointer; color: white; font-weight: 600;">
+                <i class="fas fa-trash"></i> Удалить
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.period-btn, .tab-btn {
+    padding: 10px 20px;
+    background: var(--light-gray);
+    border: 1px solid transparent;
+    border-radius: 20px;
+    cursor: pointer;
+    color: #999;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.period-btn:hover, .tab-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.period-btn.active, .tab-btn.active {
+    background: var(--accent);
+    color: var(--primary);
+}
+</style>

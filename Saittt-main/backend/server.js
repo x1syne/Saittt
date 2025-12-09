@@ -288,7 +288,54 @@ app.get('/test-api', (req, res) => {
     });
 });
 
-// 5. Получение топ-треков пользователя
+// 5. Получение топ-артистов пользователя
+app.get('/api/top-artists', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    
+    if (!token) {
+        return res.status(401).json({ 
+            error: 'Требуется токен авторизации',
+            hint: 'Добавьте header: Authorization: Bearer YOUR_TOKEN'
+        });
+    }
+    
+    try {
+        const response = await axios.get(
+            'https://api.spotify.com/v1/me/top/artists?limit=20',
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        const artists = response.data.items.map(artist => ({
+            id: artist.id,
+            name: artist.name,
+            genres: artist.genres,
+            image: artist.images[0]?.url,
+            popularity: artist.popularity,
+            followers: artist.followers?.total
+        }));
+        
+        res.json({
+            success: true,
+            count: artists.length,
+            artists: artists,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения артистов:', error.response?.data || error.message);
+        res.status(401).json({ 
+            error: 'Не удалось получить данные из Spotify',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// 6. Получение топ-треков пользователя
 app.get('/api/top-tracks', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1] || req.query.token;
     
@@ -338,7 +385,7 @@ app.get('/api/top-tracks', async (req, res) => {
     }
 });
 
-// 6. Получение информации о пользователе
+// 7. Получение информации о пользователе
 app.get('/api/user-info', async (req, res) => {
     const token = req.headers.authorization?.split(' ')[1] || req.query.token;
     
@@ -371,7 +418,7 @@ app.get('/api/user-info', async (req, res) => {
     }
 });
 
-// 7. Маршрут для проверки здоровья сервера
+// 8. Маршрут для проверки здоровья сервера
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',

@@ -363,6 +363,28 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Button Styles */
+        .period-btn, .tab-btn {
+            padding: 10px 20px;
+            background: var(--light-gray);
+            border: 1px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            color: #999;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .period-btn:hover, .tab-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .period-btn.active, .tab-btn.active {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -378,6 +400,14 @@
             .profile-header {
                 flex-direction: column;
                 text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -538,32 +568,240 @@
 
             <!-- Profile Section -->
             <div id="profileSection" style="display: none;">
-                <h2 class="section-title" style="margin-bottom: 30px;">Мой профиль</h2>
-                <!-- Profile content will be added here -->
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-user"></i> Мой профиль
+                </h2>
+
+                <div class="content-card" style="max-width: 800px; margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; gap: 30px; margin-bottom: 30px;">
+                        <img id="profileAvatar" class="profile-avatar" src="" alt="Avatar">
+                        <div style="flex: 1;">
+                            <h2 id="profileName" style="margin-bottom: 8px;">Имя пользователя</h2>
+                            <p id="profileEmail" style="color: #999; margin-bottom: 12px;">email@example.com</p>
+                            <div style="display: flex; gap: 10px;">
+                                <span class="profile-badge">
+                                    <i class="fab fa-spotify"></i> Spotify Connected
+                                </span>
+                                <span class="profile-badge" id="profileCountry">
+                                    <i class="fas fa-globe"></i> Country
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--light-gray); padding-top: 20px;">
+                        <h3 style="margin-bottom: 15px;">Информация</h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                            <div>
+                                <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Дата регистрации</p>
+                                <p id="profileJoinDate">-</p>
+                            </div>
+                            <div>
+                                <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Последний вход</p>
+                                <p id="profileLastLogin">Сегодня</p>
+                            </div>
+                            <div>
+                                <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Spotify ID</p>
+                                <p id="profileSpotifyId">-</p>
+                            </div>
+                            <div>
+                                <p style="color: #999; font-size: 13px; margin-bottom: 5px;">Подписчиков</p>
+                                <p id="profileFollowers">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card" style="max-width: 800px;">
+                    <h3 style="margin-bottom: 20px;">
+                        <i class="fas fa-music"></i> Музыкальные предпочтения
+                    </h3>
+                    <div id="profileGenres" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                </div>
             </div>
 
             <!-- Stats Section -->
             <div id="statsSection" style="display: none;">
-                <h2 class="section-title" style="margin-bottom: 30px;">Детальная статистика</h2>
-                <!-- Stats content will be added here -->
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-chart-line"></i> Детальная статистика
+                </h2>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                    <button class="period-btn active" onclick="changePeriod('week')">Неделя</button>
+                    <button class="period-btn" onclick="changePeriod('month')">Месяц</button>
+                    <button class="period-btn" onclick="changePeriod('year')">Год</button>
+                    <button class="period-btn" onclick="changePeriod('all')">Все время</button>
+                </div>
+
+                <div class="stats-grid" style="margin-bottom: 40px;">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-play"></i></div>
+                        <div class="stat-value" id="statsPlays">0</div>
+                        <div class="stat-label">Прослушиваний</div>
+                        <div class="stat-change" id="statsPlaysChange">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-headphones"></i></div>
+                        <div class="stat-value" id="statsMinutes">0</div>
+                        <div class="stat-label">Минут музыки</div>
+                        <div class="stat-change" id="statsMinutesChange">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-compact-disc"></i></div>
+                        <div class="stat-value" id="statsAlbums">0</div>
+                        <div class="stat-label">Альбомов</div>
+                        <div class="stat-change" id="statsAlbumsChange">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-list"></i></div>
+                        <div class="stat-value" id="statsPlaylists">0</div>
+                        <div class="stat-label">Плейлистов</div>
+                        <div class="stat-change" id="statsPlaylistsChange">-</div>
+                    </div>
+                </div>
+
+                <div class="cards-grid">
+                    <div class="chart-container">
+                        <h3 style="margin-bottom: 20px;">Активность по дням</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-bar" style="font-size: 48px; color: #666;"></i>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <h3 style="margin-bottom: 20px;">Распределение жанров</h3>
+                        <div class="chart-placeholder">
+                            <i class="fas fa-chart-pie" style="font-size: 48px; color: #666;"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Music Section -->
             <div id="musicSection" style="display: none;">
-                <h2 class="section-title" style="margin-bottom: 30px;">Моя музыка</h2>
-                <!-- Music content will be added here -->
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-music"></i> Моя музыка
+                </h2>
+
+                <div style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 1px solid var(--light-gray);">
+                    <button class="tab-btn active" onclick="changeMusicTab('tracks')">
+                        <i class="fas fa-music"></i> Треки
+                    </button>
+                    <button class="tab-btn" onclick="changeMusicTab('artists')">
+                        <i class="fas fa-microphone"></i> Артисты
+                    </button>
+                    <button class="tab-btn" onclick="changeMusicTab('albums')">
+                        <i class="fas fa-compact-disc"></i> Альбомы
+                    </button>
+                    <button class="tab-btn" onclick="changeMusicTab('playlists')">
+                        <i class="fas fa-list"></i> Плейлисты
+                    </button>
+                </div>
+
+                <div id="tracksTab" class="music-tab">
+                    <div id="musicTracksList" class="content-card"></div>
+                </div>
+
+                <div id="artistsTab" class="music-tab" style="display: none;">
+                    <div id="musicArtistsList" class="content-card"></div>
+                </div>
+
+                <div id="albumsTab" class="music-tab" style="display: none;">
+                    <div id="musicAlbumsList" class="content-card"></div>
+                </div>
+
+                <div id="playlistsTab" class="music-tab" style="display: none;">
+                    <div id="musicPlaylistsList" class="content-card"></div>
+                </div>
             </div>
 
             <!-- Matches Section -->
             <div id="matchesSection" style="display: none;">
-                <h2 class="section-title" style="margin-bottom: 30px;">Музыкальные совпадения</h2>
-                <!-- Matches content will be added here -->
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-users"></i> Музыкальные совпадения
+                </h2>
+
+                <div class="content-card" style="text-align: center; padding: 60px 40px; margin-bottom: 30px;">
+                    <i class="fas fa-search" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+                    <h3 style="margin-bottom: 15px;">Найдите своих музыкальных близнецов</h3>
+                    <p style="color: #999; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        Мы анализируем ваши музыкальные предпочтения и находим людей с похожим вкусом
+                    </p>
+                    <button onclick="findMatches()" style="padding: 15px 40px; background: var(--accent); border: none; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                        <i class="fas fa-magic"></i> Найти совпадения
+                    </button>
+                </div>
+
+                <div id="matchesList" class="cards-grid"></div>
             </div>
 
             <!-- Settings Section -->
             <div id="settingsSection" style="display: none;">
-                <h2 class="section-title" style="margin-bottom: 30px;">Настройки</h2>
-                <!-- Settings content will be added here -->
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-cog"></i> Настройки
+                </h2>
+
+                <div class="content-card" style="max-width: 800px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 20px;">
+                        <i class="fas fa-user-cog"></i> Аккаунт
+                    </h3>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--light-gray); border-radius: 10px;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 5px;">Spotify подключение</p>
+                                <p style="color: #999; font-size: 14px;">Управление доступом к Spotify</p>
+                            </div>
+                            <button onclick="reconnectSpotify()" style="padding: 10px 20px; background: #1DB954; border: none; border-radius: 20px; cursor: pointer; color: white; font-weight: 600;">
+                                <i class="fab fa-spotify"></i> Переподключить
+                            </button>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--light-gray); border-radius: 10px;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 5px;">Синхронизация данных</p>
+                                <p style="color: #999; font-size: 14px;">Обновить музыкальные данные</p>
+                            </div>
+                            <button onclick="syncData()" style="padding: 10px 20px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                                <i class="fas fa-sync"></i> Синхронизировать
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-card" style="max-width: 800px; margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 20px;">
+                        <i class="fas fa-shield-alt"></i> Приватность
+                    </h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 5px;">Публичный профиль</p>
+                                <p style="color: #999; font-size: 14px;">Другие пользователи могут видеть ваш профиль</p>
+                            </div>
+                            <input type="checkbox" id="publicProfile" checked style="width: 50px; height: 25px;">
+                        </label>
+                        <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div>
+                                <p style="font-weight: 600; margin-bottom: 5px;">Показывать статистику</p>
+                                <p style="color: #999; font-size: 14px;">Делиться музыкальной статистикой</p>
+                            </div>
+                            <input type="checkbox" id="showStats" checked style="width: 50px; height: 25px;">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="content-card" style="max-width: 800px; border: 1px solid #ff4444;">
+                    <h3 style="margin-bottom: 20px; color: #ff4444;">
+                        <i class="fas fa-exclamation-triangle"></i> Опасная зона
+                    </h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 5px;">Удалить аккаунт</p>
+                            <p style="color: #999; font-size: 14px;">Безвозвратно удалить все данные</p>
+                        </div>
+                        <button onclick="deleteAccount()" style="padding: 10px 20px; background: #ff4444; border: none; border-radius: 20px; cursor: pointer; color: white; font-weight: 600;">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -818,6 +1056,272 @@
                 console.log('Music data saved to Supabase');
             } catch (error) {
                 console.error('Error saving music data:', error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // PROFILE SECTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        async function loadProfileSection() {
+            const token = localStorage.getItem('spotify_token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/user-info`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const user = data.user;
+
+                    document.getElementById('profileAvatar').src = user.image || 'https://via.placeholder.com/120';
+                    document.getElementById('profileName').textContent = user.displayName || 'Пользователь';
+                    document.getElementById('profileEmail').textContent = user.email || '';
+                    document.getElementById('profileCountry').innerHTML = `<i class="fas fa-globe"></i> ${user.country || 'Unknown'}`;
+                    document.getElementById('profileSpotifyId').textContent = user.id || '-';
+                    document.getElementById('profileFollowers').textContent = user.followers || '0';
+                    
+                    const joinDate = new Date();
+                    document.getElementById('profileJoinDate').textContent = joinDate.toLocaleDateString('ru-RU');
+                    
+                    // Load genres
+                    const genres = extractGenres([]);
+                    const genresContainer = document.getElementById('profileGenres');
+                    genresContainer.innerHTML = '';
+                    genres.forEach(genre => {
+                        genresContainer.innerHTML += `
+                            <span style="padding: 8px 16px; background: var(--light-gray); border-radius: 20px; font-size: 14px;">
+                                ${genre}
+                            </span>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // STATS SECTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        let currentPeriod = 'month';
+
+        function changePeriod(period) {
+            currentPeriod = period;
+            document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadStatsSection();
+        }
+
+        async function loadStatsSection() {
+            const stats = {
+                plays: Math.floor(Math.random() * 5000 + 1000),
+                minutes: Math.floor(Math.random() * 10000 + 2000),
+                albums: Math.floor(Math.random() * 200 + 50),
+                playlists: Math.floor(Math.random() * 50 + 10)
+            };
+            
+            document.getElementById('statsPlays').textContent = stats.plays.toLocaleString();
+            document.getElementById('statsMinutes').textContent = stats.minutes.toLocaleString();
+            document.getElementById('statsAlbums').textContent = stats.albums;
+            document.getElementById('statsPlaylists').textContent = stats.playlists;
+            
+            document.getElementById('statsPlaysChange').textContent = '+' + Math.floor(Math.random() * 20 + 5) + '%';
+            document.getElementById('statsMinutesChange').textContent = '+' + Math.floor(Math.random() * 15 + 3) + '%';
+            document.getElementById('statsAlbumsChange').textContent = '+' + Math.floor(Math.random() * 10) + ' новых';
+            document.getElementById('statsPlaylistsChange').textContent = '+' + Math.floor(Math.random() * 5) + ' новых';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MUSIC SECTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        let currentMusicTab = 'tracks';
+
+        function changeMusicTab(tab) {
+            currentMusicTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.music-tab').forEach(t => t.style.display = 'none');
+            document.getElementById(tab + 'Tab').style.display = 'block';
+            
+            loadMusicTab(tab);
+        }
+
+        async function loadMusicTab(tab) {
+            const token = localStorage.getItem('spotify_token');
+            if (!token) return;
+            
+            try {
+                let endpoint = '';
+                let containerId = '';
+                
+                switch(tab) {
+                    case 'tracks':
+                        endpoint = '/api/top-tracks';
+                        containerId = 'musicTracksList';
+                        break;
+                    case 'artists':
+                        endpoint = '/api/top-artists';
+                        containerId = 'musicArtistsList';
+                        break;
+                    default:
+                        containerId = 'music' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'List';
+                        document.getElementById(containerId).innerHTML = `
+                            <div style="text-align: center; padding: 60px 20px;">
+                                <i class="fas fa-compact-disc" style="font-size: 64px; color: #666; margin-bottom: 20px;"></i>
+                                <p style="color: #999;">Эта функция будет доступна в следующей версии</p>
+                            </div>
+                        `;
+                        return;
+                }
+                
+                const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayMusicData(containerId, data, tab);
+                }
+            } catch (error) {
+                console.error('Error loading music tab:', error);
+            }
+        }
+
+        function displayMusicData(containerId, data, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (type === 'tracks' && data.tracks) {
+                data.tracks.forEach((track, index) => {
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div class="list-item-number">${index + 1}</div>
+                            <img class="list-item-image" src="${track.image || 'https://via.placeholder.com/50'}" alt="${track.name}">
+                            <div class="list-item-info">
+                                <div class="list-item-title">${track.name}</div>
+                                <div class="list-item-subtitle">${track.artist}</div>
+                            </div>
+                            <div style="color: #999; font-size: 14px;">${formatDuration(track.duration)}</div>
+                        </div>
+                    `;
+                });
+            } else if (type === 'artists' && data.artists) {
+                data.artists.forEach((artist, index) => {
+                    container.innerHTML += `
+                        <div class="list-item">
+                            <div class="list-item-number">${index + 1}</div>
+                            <img class="list-item-image" src="${artist.image || 'https://via.placeholder.com/50'}" alt="${artist.name}">
+                            <div class="list-item-info">
+                                <div class="list-item-title">${artist.name}</div>
+                                <div class="list-item-subtitle">${artist.genres ? artist.genres.slice(0, 2).join(', ') : 'Artist'}</div>
+                            </div>
+                            <div style="color: #999; font-size: 14px;">${artist.popularity || 0}%</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = ((ms % 60000) / 1000).toFixed(0);
+            return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // MATCHES SECTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        async function findMatches() {
+            const matchesList = document.getElementById('matchesList');
+            matchesList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            setTimeout(() => {
+                const matches = generateMockMatches(6);
+                displayMatches(matches);
+            }, 2000);
+        }
+
+        function generateMockMatches(count) {
+            const names = ['Алексей', 'Мария', 'Дмитрий', 'Анна', 'Иван', 'Елена'];
+            const genres = ['Pop', 'Rock', 'Hip-Hop', 'Electronic', 'Jazz'];
+            
+            return Array.from({length: count}, (_, i) => ({
+                name: names[Math.floor(Math.random() * names.length)] + ' ' + String.fromCharCode(65 + i) + '.',
+                match: Math.floor(Math.random() * 20 + 75),
+                genres: genres.sort(() => 0.5 - Math.random()).slice(0, 3),
+                tracks: Math.floor(Math.random() * 500 + 100)
+            }));
+        }
+
+        function displayMatches(matches) {
+            const matchesList = document.getElementById('matchesList');
+            matchesList.innerHTML = '';
+            
+            matches.forEach(match => {
+                matchesList.innerHTML += `
+                    <div class="content-card" style="text-align: center;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, #00cc70 100%); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700;">
+                            ${match.name.charAt(0)}
+                        </div>
+                        <h3 style="margin-bottom: 8px;">${match.name}</h3>
+                        <div style="color: var(--accent); font-size: 24px; font-weight: 700; margin-bottom: 10px;">
+                            ${match.match}% совпадение
+                        </div>
+                        <div style="color: #999; font-size: 14px; margin-bottom: 15px;">
+                            ${match.genres.join(', ')}
+                        </div>
+                        <div style="color: #999; font-size: 13px; margin-bottom: 20px;">
+                            ${match.tracks} общих треков
+                        </div>
+                        <button onclick="alert('Запрос отправлен!')" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                            <i class="fas fa-user-plus"></i> Подключиться
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SETTINGS SECTION
+        // ═══════════════════════════════════════════════════════════════
+        
+        function reconnectSpotify() {
+            if (confirm('Переподключить Spotify аккаунт?')) {
+                localStorage.clear();
+                window.location.href = `${BACKEND_URL}/auth/spotify`;
+            }
+        }
+
+        async function syncData() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Синхронизация...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-check"></i> Синхронизировано!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    location.reload();
+                }, 1500);
+            }, 2000);
+        }
+
+        function deleteAccount() {
+            if (confirm('Вы уверены, что хотите удалить аккаунт?')) {
+                if (confirm('Последнее предупреждение! Все данные будут удалены.')) {
+                    localStorage.clear();
+                    alert('Аккаунт удален.');
+                    window.location.href = 'index.html';
+                }
             }
         }
 
