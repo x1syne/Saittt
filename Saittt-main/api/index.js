@@ -608,7 +608,218 @@ app.get('/api/user-genres', async (req, res) => {
     }
 });
 
-// 12. Маршрут для проверки здоровья сервера
+// 12. Поиск пользователей по музыкальной совместимости
+app.get('/api/find-users', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    const { genre, location, compatibility } = req.query;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        // Получаем данные текущего пользователя для анализа совместимости
+        const userResponse = await axios.get('https://api.spotify.com/v1/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const currentUser = userResponse.data;
+        
+        // Получаем топ артистов пользователя для анализа
+        const artistsResponse = await axios.get(
+            'https://api.spotify.com/v1/me/top/artists?limit=50',
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        const userGenres = [];
+        artistsResponse.data.items.forEach(artist => {
+            userGenres.push(...artist.genres);
+        });
+        
+        // Генерируем похожих пользователей (в реальном приложении это была бы база данных)
+        const similarUsers = generateSimilarUsers(currentUser, userGenres, { genre, location, compatibility });
+        
+        res.json({
+            success: true,
+            currentUser: {
+                id: currentUser.id,
+                name: currentUser.display_name,
+                genres: [...new Set(userGenres)].slice(0, 5)
+            },
+            users: similarUsers,
+            filters: { genre, location, compatibility },
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка поиска пользователей:', error.response?.data || error.message);
+        res.status(500).json({ 
+            error: 'Не удалось найти пользователей',
+            details: error.message
+        });
+    }
+});
+
+// 13. Отправка запроса в друзья
+app.post('/api/friend-request', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    const { targetUserId, message } = req.body;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        // Получаем данные отправителя
+        const userResponse = await axios.get('https://api.spotify.com/v1/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const sender = userResponse.data;
+        
+        // В реальном приложении здесь была бы запись в базу данных
+        // Пока что просто возвращаем успешный ответ
+        
+        res.json({
+            success: true,
+            message: 'Запрос в друзья отправлен',
+            request: {
+                from: sender.display_name,
+                to: targetUserId,
+                message: message || 'Привет! Давайте дружить и создавать музыку вместе!',
+                timestamp: new Date().toISOString()
+            }
+        });
+        
+    } catch (error) {
+        console.error('Ошибка отправки запроса:', error);
+        res.status(500).json({ 
+            error: 'Не удалось отправить запрос в друзья',
+            details: error.message
+        });
+    }
+});
+
+// 14. Получение списка друзей
+app.get('/api/friends', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        // В реальном приложении здесь был бы запрос к базе данных
+        // Пока генерируем демо-друзей
+        const friends = generateDemoFriends();
+        
+        res.json({
+            success: true,
+            friends: friends,
+            count: friends.length,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения друзей:', error);
+        res.status(500).json({ 
+            error: 'Не удалось получить список друзей',
+            details: error.message
+        });
+    }
+});
+
+// Вспомогательные функции для генерации данных
+function generateSimilarUsers(currentUser, userGenres, filters) {
+    const names = ['Алексей Музыкант', 'Мария Певица', 'Дмитрий Продюсер', 'Анна Композитор', 'Иван Гитарист', 'Елена Пианистка'];
+    const cities = ['Москва', 'Санкт-Петербург', 'Екатеринбург', 'Новосибирск', 'Казань', 'Нижний Новгород'];
+    const instruments = ['Гитара', 'Фортепиано', 'Вокал', 'Барабаны', 'Бас-гитара', 'Синтезатор'];
+    const allGenres = ['pop', 'rock', 'electronic', 'hip-hop', 'jazz', 'classical', 'indie', 'folk'];
+    
+    return Array.from({length: 8}, (_, i) => {
+        const compatibility = Math.floor(Math.random() * 30 + 70); // 70-100%
+        const commonGenres = userGenres.slice(0, Math.floor(Math.random() * 3 + 1));
+        
+        return {
+            id: `user_${i + 1}`,
+            name: names[i % names.length],
+            avatar: `https://i.pravatar.cc/150?img=${i + 10}`,
+            location: cities[Math.floor(Math.random() * cities.length)],
+            compatibility: compatibility,
+            commonGenres: commonGenres.length > 0 ? commonGenres : [allGenres[Math.floor(Math.random() * allGenres.length)]],
+            instruments: [instruments[Math.floor(Math.random() * instruments.length)]],
+            mutualFriends: Math.floor(Math.random() * 15),
+            lastActive: `${Math.floor(Math.random() * 24)} часов назад`,
+            bio: `Музыкант из ${cities[Math.floor(Math.random() * cities.length)]}. Люблю создавать музыку и искать новые звуки.`
+        };
+    }).sort((a, b) => b.compatibility - a.compatibility);
+}
+
+function generateDemoFriends() {
+    const friends = [
+        {
+            id: 'friend_1',
+            name: 'Алексей Петров',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            status: 'online',
+            lastSeen: 'Сейчас онлайн',
+            compatibility: 94,
+            commonTracks: 127,
+            location: 'Москва',
+            instruments: ['Гитара', 'Вокал']
+        },
+        {
+            id: 'friend_2', 
+            name: 'Мария Иванова',
+            avatar: 'https://i.pravatar.cc/150?img=2',
+            status: 'offline',
+            lastSeen: '2 часа назад',
+            compatibility: 89,
+            commonTracks: 89,
+            location: 'СПб',
+            instruments: ['Фортепиано']
+        },
+        {
+            id: 'friend_3',
+            name: 'Дмитрий Козлов', 
+            avatar: 'https://i.pravatar.cc/150?img=3',
+            status: 'away',
+            lastSeen: '30 минут назад',
+            compatibility: 87,
+            commonTracks: 156,
+            location: 'Екатеринбург',
+            instruments: ['DJ', 'Продюсер']
+        },
+        {
+            id: 'friend_4',
+            name: 'Анна Композитор',
+            avatar: 'https://i.pravatar.cc/150?img=4',
+            status: 'online',
+            lastSeen: 'Сейчас онлайн',
+            compatibility: 91,
+            commonTracks: 203,
+            location: 'Казань',
+            instruments: ['Синтезатор', 'Композиция']
+        },
+        {
+            id: 'friend_5',
+            name: 'Иван Барабанщик',
+            avatar: 'https://i.pravatar.cc/150?img=5',
+            status: 'offline',
+            lastSeen: '1 день назад',
+            compatibility: 85,
+            commonTracks: 67,
+            location: 'Новосибирск',
+            instruments: ['Барабаны', 'Перкуссия']
+        }
+    ];
+    
+    return friends;
+}
+
+// 15. Маршрут для проверки здоровья сервера
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',

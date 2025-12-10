@@ -462,6 +462,18 @@
                     </a>
                 </li>
                 <li class="sidebar-item">
+                    <a href="#friends" class="sidebar-link" onclick="showSection('friends')">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Друзья</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="#discover" class="sidebar-link" onclick="showSection('discover')">
+                        <i class="fas fa-search"></i>
+                        <span>Поиск людей</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
                     <a href="#settings" class="sidebar-link" onclick="showSection('settings')">
                         <i class="fas fa-cog"></i>
                         <span>Настройки</span>
@@ -734,6 +746,153 @@
                 <div id="matchesList" class="cards-grid"></div>
             </div>
 
+            <!-- Friends Section -->
+            <div id="friendsSection" style="display: none;">
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-user-friends"></i> Мои друзья
+                </h2>
+
+                <!-- Friends Stats -->
+                <div class="stats-grid" style="margin-bottom: 40px;">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-value" id="friendsCount">0</div>
+                        <div class="stat-label">Друзей</div>
+                        <div class="stat-change">+2 за неделю</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-music"></i></div>
+                        <div class="stat-value" id="sharedTracks">0</div>
+                        <div class="stat-label">Общих треков</div>
+                        <div class="stat-change">Топ совпадения</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                        <div class="stat-value" id="avgCompatibility">0%</div>
+                        <div class="stat-label">Средняя совместимость</div>
+                        <div class="stat-change">Отличный вкус!</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-comments"></i></div>
+                        <div class="stat-value" id="activeChats">0</div>
+                        <div class="stat-label">Активных чатов</div>
+                        <div class="stat-change">Сегодня</div>
+                    </div>
+                </div>
+
+                <!-- Friends List -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Список друзей</h3>
+                        <button onclick="loadFriends()" class="section-link" style="background: var(--accent); color: var(--primary); padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer;">
+                            <i class="fas fa-sync"></i> Обновить
+                        </button>
+                    </div>
+                    <div id="friendsList" class="cards-grid"></div>
+                </div>
+
+                <!-- Friend Requests -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Запросы в друзья</h3>
+                        <span class="section-link" id="requestsCount">0 новых</span>
+                    </div>
+                    <div id="friendRequests" class="content-card">
+                        <div style="text-align: center; padding: 40px; color: #999;">
+                            <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 15px;"></i>
+                            <p>Нет новых запросов в друзья</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discover Section -->
+            <div id="discoverSection" style="display: none;">
+                <h2 class="section-title" style="margin-bottom: 30px;">
+                    <i class="fas fa-search"></i> Поиск музыкальных друзей
+                </h2>
+
+                <!-- Search Filters -->
+                <div class="content-card" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 20px;">
+                        <i class="fas fa-filter"></i> Фильтры поиска
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Жанр музыки</label>
+                            <select id="genreFilter" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--light-gray); background: var(--gray); color: white;">
+                                <option value="">Все жанры</option>
+                                <option value="pop">Pop</option>
+                                <option value="rock">Rock</option>
+                                <option value="hip-hop">Hip-Hop</option>
+                                <option value="electronic">Electronic</option>
+                                <option value="jazz">Jazz</option>
+                                <option value="classical">Classical</option>
+                                <option value="indie">Indie</option>
+                                <option value="r&b">R&B</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Местоположение</label>
+                            <select id="locationFilter" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--light-gray); background: var(--gray); color: white;">
+                                <option value="">Любое</option>
+                                <option value="moscow">Москва</option>
+                                <option value="spb">Санкт-Петербург</option>
+                                <option value="ekb">Екатеринбург</option>
+                                <option value="nsk">Новосибирск</option>
+                                <option value="kzn">Казань</option>
+                                <option value="nn">Нижний Новгород</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Минимальная совместимость</label>
+                            <select id="compatibilityFilter" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--light-gray); background: var(--gray); color: white;">
+                                <option value="50">50%+</option>
+                                <option value="70">70%+</option>
+                                <option value="80">80%+</option>
+                                <option value="90">90%+</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: end;">
+                            <button onclick="searchUsers()" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                                <i class="fas fa-search"></i> Найти
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Results -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Результаты поиска</h3>
+                        <span class="section-link" id="searchResultsCount">0 найдено</span>
+                    </div>
+                    <div id="searchResults" class="cards-grid">
+                        <div class="content-card" style="text-align: center; padding: 60px 40px;">
+                            <i class="fas fa-search" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+                            <h3 style="margin-bottom: 15px;">Найдите своих музыкальных близнецов</h3>
+                            <p style="color: #999; margin-bottom: 30px;">
+                                Используйте фильтры выше для поиска людей с похожими музыкальными предпочтениями
+                            </p>
+                            <button onclick="searchUsers()" style="padding: 15px 40px; background: var(--accent); border: none; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                                <i class="fas fa-magic"></i> Начать поиск
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommended Users -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h3 class="section-title">Рекомендации для вас</h3>
+                        <button onclick="loadRecommendations()" class="section-link" style="background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 6px 12px; border-radius: 15px; cursor: pointer;">
+                            <i class="fas fa-refresh"></i> Обновить
+                        </button>
+                    </div>
+                    <div id="recommendedUsers" class="cards-grid"></div>
+                </div>
+            </div>
+
             <!-- Settings Section -->
             <div id="settingsSection" style="display: none;">
                 <h2 class="section-title" style="margin-bottom: 30px;">
@@ -872,6 +1031,10 @@
                 loadStatsSection();
             } else if (section === 'profile') {
                 loadProfileSection();
+            } else if (section === 'friends') {
+                loadFriendsSection();
+            } else if (section === 'discover') {
+                loadDiscoverSection();
             }
             
             currentSection = section;

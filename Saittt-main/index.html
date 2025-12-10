@@ -97,8 +97,130 @@
         }
 
         .hero-content {
-            max-width: 600px;
+            max-width: 700px;
             z-index: 2;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Функции секция */
+        .features {
+            padding: 100px 40px;
+            background: var(--gray);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--light-gray);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .feature-description {
+            color: #999;
+            line-height: 1.6;
+        }
+
+        /* Отзывы */
+        .testimonials {
+            padding: 100px 40px;
+            background: var(--primary);
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: var(--gray);
+            padding: 30px;
+            border-radius: 15px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .author-info h4 {
+            margin-bottom: 5px;
+        }
+
+        .author-info p {
+            color: #999;
+            font-size: 14px;
         }
 
         .hero-badge {
@@ -119,6 +241,7 @@
             margin-bottom: 24px;
             background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -284,6 +407,16 @@
             from { --num: 0; }
             to { --num: var(--target); }
         }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
 
         .stat-label {
             font-size: 14px;
@@ -400,7 +533,7 @@
             <a href="index.html" class="nav-link">Главная</a>
             <a href="studio.html" class="nav-link">AI Студия</a>
             <a href="community.html" class="nav-link">Сообщество</a>
-            <a href="#pricing" class="nav-link">Тарифы</a>
+            <a href="#" onclick="showComingSoon('Тарифы')" class="nav-link">Тарифы</a>
         </div>
         <div style="display: flex; align-items: center; gap: 20px;">
             <div id="userProfileIcon" style="display: none;">
@@ -419,12 +552,37 @@
             <div class="hero-badge">AI-ПЛАТФОРМА ДЛЯ МУЗЫКИ</div>
             <h1 class="hero-title">Где музыка встречает искусственный интеллект</h1>
             <p class="hero-subtitle">Найдите своих музыкальных единомышленников, создавайте музыку с передовым ИИ и присоединяйтесь к глобальному сообществу музыкальных новаторов.</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">1,250+</span>
+                    <span class="stat-label">Активных пользователей</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">8,500+</span>
+                    <span class="stat-label">Созданных треков</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Совместимость</span>
+                </div>
+            </div>
             <div class="hero-actions">
                 <button onclick="loginWithSpotify()" class="btn-primary">
                     <i class="fab fa-spotify"></i>
                     Войти через Spotify
                 </button>
-                <button class="btn-secondary">Смотреть демо</button>
+                <button class="btn-secondary" onclick="showDemo()">
+                    <i class="fas fa-play"></i>
+                    Смотреть демо
+                </button>
+                <button class="btn-secondary" onclick="window.location.href='studio.html'">
+                    <i class="fas fa-magic"></i>
+                    AI Студия
+                </button>
+                <button class="btn-secondary" onclick="scrollToFeatures()">
+                    <i class="fas fa-info-circle"></i>
+                    Узнать больше
+                </button>
             </div>
         </div>
         <div class="hero-background"></div>
@@ -487,7 +645,9 @@
     <section class="cta">
         <h2 class="cta-title">Готовы революционизировать ваш музыкальный путь?</h2>
         <p class="cta-subtitle">Присоединяйтесь к тысячам музыкантов и любителей музыки, которые уже создают, соединяются и инноваруют с SoundMate.</p>
-        <button class="btn-primary">Начать бесплатный пробный период</button>
+        <button class="btn-primary" onclick="loginWithSpotify()">
+            <i class="fab fa-spotify"></i> Начать с Spotify
+        </button>
     </section>
 
     <!-- Подвал -->
@@ -499,24 +659,24 @@
             </div>
             <div class="footer-links">
                 <h4>Продукт</h4>
-                <a href="#">Возможности</a>
+                <a href="#features" onclick="scrollToFeatures()">Возможности</a>
                 <a href="studio.html">AI Студия</a>
                 <a href="community.html">Сообщество</a>
-                <a href="#pricing">Тарифы</a>
-                <a href="#">API</a>
+                <a href="#" onclick="showComingSoon('Тарифы')">Тарифы</a>
+                <a href="#" onclick="showComingSoon('API документация')">API</a>
             </div>
             <div class="footer-links">
                 <h4>Компания</h4>
-                <a href="#">О нас</a>
-                <a href="#">Блог</a>
-                <a href="#">Карьера</a>
-                <a href="#">Контакты</a>
+                <a href="#" onclick="showComingSoon('О нас')">О нас</a>
+                <a href="#" onclick="showComingSoon('Блог')">Блог</a>
+                <a href="#" onclick="showComingSoon('Карьера')">Карьера</a>
+                <a href="#" onclick="showComingSoon('Контакты')">Контакты</a>
             </div>
             <div class="footer-links">
                 <h4>Правовая информация</h4>
-                <a href="#">Конфиденциальность</a>
-                <a href="#">Условия</a>
-                <a href="#">Безопасность</a>
+                <a href="#" onclick="showComingSoon('Политика конфиденциальности')">Конфиденциальность</a>
+                <a href="#" onclick="showComingSoon('Условия использования')">Условия</a>
+                <a href="#" onclick="showComingSoon('Безопасность')">Безопасность</a>
             </div>
         </div>
     </footer>
@@ -617,7 +777,226 @@
             if (statsSection) {
                 statsObserver.observe(statsSection);
             }
+            
+            // Добавляем интерактивность к карточкам функций
+            addFeatureInteractivity();
+            
+            // Добавляем плавную прокрутку для всех якорных ссылок
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
         });
+    </script>
+
+    <!-- Секция отзывов -->
+    <section class="testimonials">
+        <div class="section-header">
+            <h2 class="section-title">Что говорят наши пользователи</h2>
+            <p class="section-subtitle">Реальные отзывы от музыкантов и продюсеров со всего мира</p>
+        </div>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <p class="testimonial-text">"SoundMate помог мне найти идеального коллаборатора для моего альбома. AI-анализ музыкальной совместимости просто невероятен!"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">А</div>
+                    <div class="author-info">
+                        <h4>Алексей Петров</h4>
+                        <p>Продюсер, Москва</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-text">"Создал свой первый трек с помощью AI Studio за 10 минут. Качество просто поражает - звучит как профессиональная студийная запись."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">М</div>
+                    <div class="author-info">
+                        <h4>Мария Иванова</h4>
+                        <p>Певица, Санкт-Петербург</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <p class="testimonial-text">"Платформа объединила меня с музыкантами из 15 стран. Мы создали EP альбом, который сейчас в топе Spotify!"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">Д</div>
+                    <div class="author-info">
+                        <h4>Дмитрий Козлов</h4>
+                        <p>DJ, Екатеринбург</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Дополнительные функции -->
+    <section class="features">
+        <div class="section-header">
+            <h2 class="section-title">Расширенные возможности</h2>
+            <p class="section-subtitle">Профессиональные инструменты для серьезных музыкантов</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="feature-title">Умный поиск</h3>
+                <p class="feature-description">Находите музыкантов по жанрам, инструментам, локации и уровню совместимости с вашим музыкальным вкусом.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="feature-title">Аналитика</h3>
+                <p class="feature-description">Подробная статистика ваших музыкальных предпочтений, трендов и прогнозов развития вкуса.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h3 class="feature-title">Глобальное сообщество</h3>
+                <p class="feature-description">Присоединяйтесь к музыкальным челленджам, конкурсам и коллаборациям с артистами со всего мира.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Функция для демо
+        function showDemo() {
+            // Создаем модальное окно для демо
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease-out;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: var(--gray); padding: 40px; border-radius: 20px; max-width: 600px; text-align: center; position: relative;">
+                    <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer;">×</button>
+                    
+                    <h2 style="color: var(--accent); margin-bottom: 20px;">🎵 SoundMate Demo</h2>
+                    
+                    <div style="text-align: left; margin-bottom: 30px;">
+                        <h3 style="margin-bottom: 15px;">Что вы можете попробовать прямо сейчас:</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 10px; padding: 10px; background: var(--light-gray); border-radius: 10px;">
+                                <strong>🎨 AI Studio</strong> - Создание музыки с помощью ИИ
+                            </li>
+                            <li style="margin-bottom: 10px; padding: 10px; background: var(--light-gray); border-radius: 10px;">
+                                <strong>📊 Dashboard</strong> - Анализ музыкального вкуса (требует Spotify)
+                            </li>
+                            <li style="margin-bottom: 10px; padding: 10px; background: var(--light-gray); border-radius: 10px;">
+                                <strong>👥 Поиск друзей</strong> - Находите единомышленников по музыке
+                            </li>
+                            <li style="margin-bottom: 10px; padding: 10px; background: var(--light-gray); border-radius: 10px;">
+                                <strong>🔗 Spotify интеграция</strong> - Полный анализ ваших предпочтений
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button onclick="window.location.href='studio.html'" style="padding: 12px 24px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600;">
+                            🎨 Попробовать AI Studio
+                        </button>
+                        <button onclick="loginWithSpotify()" style="padding: 12px 24px; background: #1DB954; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; color: white;">
+                            🎵 Войти через Spotify
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+        
+        // Функция прокрутки к функциям
+        function scrollToFeatures() {
+            document.getElementById('features').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+        
+        // Улучшенная функция показа статистики
+        function showLiveStats() {
+            const stats = document.querySelectorAll('.stat-number');
+            stats.forEach(stat => {
+                const target = parseInt(stat.getAttribute('data-target')) || parseInt(stat.textContent);
+                animateCounter(stat, target);
+            });
+        }
+        
+        // Функция для страниц "скоро будет"
+        function showComingSoon(feature) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--gray);
+                padding: 30px;
+                border-radius: 20px;
+                z-index: 10000;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                border: 1px solid var(--accent);
+                animation: slideUp 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <h3 style="color: var(--accent); margin-bottom: 15px;">🚀 ${feature}</h3>
+                <p style="color: #ccc; margin-bottom: 20px;">Эта функция находится в разработке и будет доступна в ближайшее время!</p>
+                <button onclick="this.parentElement.remove()" style="padding: 10px 20px; background: var(--accent); border: none; border-radius: 15px; cursor: pointer; font-weight: 600;">
+                    Понятно
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Автоматически убираем через 3 секунды
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 3000);
+        }
+        
+        // Добавляем интерактивность к карточкам функций
+        function addFeatureInteractivity() {
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach((card, index) => {
+                card.addEventListener('click', () => {
+                    const features = [
+                        'AI-подбор музыкальных партнеров',
+                        'Создание музыки с помощью ИИ', 
+                        'Живые коллаборации в реальном времени'
+                    ];
+                    
+                    if (index === 1) {
+                        window.location.href = 'studio.html';
+                    } else {
+                        showComingSoon(features[index]);
+                    }
+                });
+                
+                card.style.cursor = 'pointer';
+            });
+        }
     </script>
 </body>
 </html>

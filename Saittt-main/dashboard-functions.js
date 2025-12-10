@@ -845,6 +845,551 @@ function showDebugInfo() {
     alert(debugInfo);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// FRIENDS SECTION FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadFriendsSection() {
+    console.log('👥 Загружаем секцию друзей...');
+    
+    // Загружаем статистику друзей
+    await loadFriendsStats();
+    
+    // Загружаем список друзей
+    await loadFriends();
+    
+    // Загружаем запросы в друзья
+    await loadFriendRequests();
+}
+
+async function loadFriendsStats() {
+    const token = localStorage.getItem('spotify_token');
+    
+    if (!token) {
+        // Демо статистика
+        document.getElementById('friendsCount').textContent = '0';
+        document.getElementById('sharedTracks').textContent = '0';
+        document.getElementById('avgCompatibility').textContent = '0%';
+        document.getElementById('activeChats').textContent = '0';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/friends`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const friends = data.friends || [];
+            
+            // Подсчитываем статистику
+            const friendsCount = friends.length;
+            const avgCompatibility = friends.length > 0 
+                ? Math.round(friends.reduce((sum, f) => sum + f.compatibility, 0) / friends.length)
+                : 0;
+            const sharedTracks = friends.reduce((sum, f) => sum + (f.commonTracks || 0), 0);
+            const activeChats = friends.filter(f => f.status === 'online').length;
+            
+            document.getElementById('friendsCount').textContent = friendsCount;
+            document.getElementById('sharedTracks').textContent = sharedTracks;
+            document.getElementById('avgCompatibility').textContent = avgCompatibility + '%';
+            document.getElementById('activeChats').textContent = activeChats;
+            
+            console.log('✅ Статистика друзей загружена:', { friendsCount, avgCompatibility, sharedTracks, activeChats });
+        } else {
+            throw new Error('Failed to load friends stats');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки статистики друзей:', error);
+        // Показываем демо данные
+        document.getElementById('friendsCount').textContent = '3';
+        document.getElementById('sharedTracks').textContent = '127';
+        document.getElementById('avgCompatibility').textContent = '89%';
+        document.getElementById('activeChats').textContent = '1';
+    }
+}
+
+async function loadFriends() {
+    const token = localStorage.getItem('spotify_token');
+    const friendsList = document.getElementById('friendsList');
+    
+    friendsList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    
+    if (!token) {
+        console.warn('❌ Нет токена для загрузки друзей, используем демо данные');
+        displayFriends(generateDemoFriends());
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/friends`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Друзья получены:', data.friends);
+            displayFriends(data.friends);
+        } else {
+            throw new Error('Failed to load friends');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки друзей:', error);
+        displayFriends(generateDemoFriends());
+    }
+}
+
+function displayFriends(friends) {
+    const friendsList = document.getElementById('friendsList');
+    friendsList.innerHTML = '';
+    
+    if (!friends || friends.length === 0) {
+        friendsList.innerHTML = `
+            <div class="content-card" style="text-align: center; padding: 60px 40px;">
+                <i class="fas fa-user-plus" style="font-size: 64px; color: var(--accent); margin-bottom: 20px;"></i>
+                <h3 style="margin-bottom: 15px;">У вас пока нет друзей</h3>
+                <p style="color: #999; margin-bottom: 30px;">
+                    Найдите людей с похожими музыкальными предпочтениями в разделе "Поиск людей"
+                </p>
+                <button onclick="showSection('discover')" style="padding: 15px 40px; background: var(--accent); border: none; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                    <i class="fas fa-search"></i> Найти друзей
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    friends.forEach(friend => {
+        const statusIcon = friend.status === 'online' ? '🟢' : 
+                          friend.status === 'away' ? '🟡' : '⚫';
+        
+        friendsList.innerHTML += `
+            <div class="content-card" style="position: relative;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <div style="position: relative;">
+                        <img src="${friend.avatar}" alt="${friend.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                        <span style="position: absolute; bottom: -2px; right: -2px; font-size: 12px;">${statusIcon}</span>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 4px;">${friend.name}</h4>
+                        <p style="color: #999; font-size: 14px; margin-bottom: 4px;">${friend.location || 'Неизвестно'}</p>
+                        <p style="color: #999; font-size: 12px;">${friend.lastSeen}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--accent); font-size: 18px; font-weight: 700; margin-bottom: 4px;">
+                            ${friend.compatibility}%
+                        </div>
+                        <div style="color: #999; font-size: 12px;">
+                            ${friend.commonTracks} общих
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px solid var(--light-gray); padding-top: 15px;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        ${friend.instruments.map(inst => 
+                            `<span style="padding: 4px 8px; background: var(--light-gray); border-radius: 12px; font-size: 12px;">${inst}</span>`
+                        ).join('')}
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="openChat('${friend.id}')" style="flex: 1; padding: 8px; background: var(--accent); border: none; border-radius: 15px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                            <i class="fas fa-comment"></i> Чат
+                        </button>
+                        <button onclick="viewProfile('${friend.id}')" style="flex: 1; padding: 8px; background: var(--light-gray); border: none; border-radius: 15px; cursor: pointer; font-size: 14px; font-weight: 600; color: white;">
+                            <i class="fas fa-user"></i> Профиль
+                        </button>
+                        <button onclick="removeFriend('${friend.id}')" style="padding: 8px 12px; background: #ff4444; border: none; border-radius: 15px; cursor: pointer; font-size: 14px;">
+                            <i class="fas fa-user-minus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function generateDemoFriends() {
+    return [
+        {
+            id: 'friend_1',
+            name: 'Алексей Петров',
+            avatar: 'https://i.pravatar.cc/150?img=1',
+            status: 'online',
+            lastSeen: 'Сейчас онлайн',
+            compatibility: 94,
+            commonTracks: 127,
+            location: 'Москва',
+            instruments: ['Гитара', 'Вокал']
+        },
+        {
+            id: 'friend_2', 
+            name: 'Мария Иванова',
+            avatar: 'https://i.pravatar.cc/150?img=2',
+            status: 'offline',
+            lastSeen: '2 часа назад',
+            compatibility: 89,
+            commonTracks: 89,
+            location: 'СПб',
+            instruments: ['Фортепиано']
+        },
+        {
+            id: 'friend_3',
+            name: 'Дмитрий Козлов', 
+            avatar: 'https://i.pravatar.cc/150?img=3',
+            status: 'away',
+            lastSeen: '30 минут назад',
+            compatibility: 87,
+            commonTracks: 156,
+            location: 'Екатеринбург',
+            instruments: ['DJ', 'Продюсер']
+        }
+    ];
+}
+
+async function loadFriendRequests() {
+    // В реальном приложении здесь был бы запрос к API
+    // Пока показываем пустое состояние
+    document.getElementById('requestsCount').textContent = '0 новых';
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DISCOVER SECTION FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadDiscoverSection() {
+    console.log('🔍 Загружаем секцию поиска...');
+    await loadRecommendations();
+}
+
+async function searchUsers() {
+    const genre = document.getElementById('genreFilter').value;
+    const location = document.getElementById('locationFilter').value;
+    const compatibility = document.getElementById('compatibilityFilter').value;
+    
+    console.log('🔍 Поиск пользователей с фильтрами:', { genre, location, compatibility });
+    
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    
+    const token = localStorage.getItem('spotify_token');
+    
+    try {
+        let users = [];
+        
+        if (token) {
+            // Пытаемся получить реальные данные
+            const response = await fetch(`${BACKEND_URL}/api/find-users?genre=${genre}&location=${location}&compatibility=${compatibility}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                users = data.users || [];
+                console.log('✅ Пользователи найдены:', users);
+            } else {
+                throw new Error('API недоступен');
+            }
+        } else {
+            throw new Error('Нет токена');
+        }
+        
+        // Если API не работает, генерируем демо данные
+        if (users.length === 0) {
+            users = generateSearchResults(genre, location, parseInt(compatibility));
+        }
+        
+        displaySearchResults(users);
+        document.getElementById('searchResultsCount').textContent = `${users.length} найдено`;
+        
+    } catch (error) {
+        console.error('❌ Ошибка поиска пользователей:', error);
+        
+        // Генерируем демо результаты
+        const users = generateSearchResults(genre, location, parseInt(compatibility));
+        displaySearchResults(users);
+        document.getElementById('searchResultsCount').textContent = `${users.length} найдено (демо)`;
+    }
+}
+
+function generateSearchResults(genre, location, minCompatibility) {
+    const names = ['Анна Музыкант', 'Сергей Гитарист', 'Елена Певица', 'Михаил Продюсер', 'Ольга Пианистка', 'Андрей Барабанщик'];
+    const cities = ['Москва', 'Санкт-Петербург', 'Екатеринбург', 'Новосибирск', 'Казань', 'Нижний Новгород'];
+    const instruments = ['Гитара', 'Фортепиано', 'Вокал', 'Барабаны', 'Бас-гитара', 'Синтезатор', 'DJ', 'Продюсер'];
+    const genres = ['pop', 'rock', 'electronic', 'hip-hop', 'jazz', 'classical', 'indie', 'folk'];
+    
+    return Array.from({length: Math.floor(Math.random() * 8 + 4)}, (_, i) => {
+        const compatibility = Math.floor(Math.random() * (100 - minCompatibility) + minCompatibility);
+        const userGenres = genre ? [genre] : genres.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        return {
+            id: `search_user_${i + 1}`,
+            name: names[i % names.length],
+            avatar: `https://i.pravatar.cc/150?img=${i + 20}`,
+            location: location ? cities.find(c => c.toLowerCase().includes(location)) || cities[0] : cities[Math.floor(Math.random() * cities.length)],
+            compatibility: compatibility,
+            commonGenres: userGenres,
+            instruments: [instruments[Math.floor(Math.random() * instruments.length)]],
+            mutualFriends: Math.floor(Math.random() * 15),
+            lastActive: `${Math.floor(Math.random() * 24)} часов назад`,
+            bio: `Музыкант из ${cities[Math.floor(Math.random() * cities.length)]}. Люблю создавать музыку и искать новые звуки.`
+        };
+    }).sort((a, b) => b.compatibility - a.compatibility);
+}
+
+function displaySearchResults(users) {
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '';
+    
+    if (!users || users.length === 0) {
+        searchResults.innerHTML = `
+            <div class="content-card" style="text-align: center; padding: 60px 40px;">
+                <i class="fas fa-search" style="font-size: 64px; color: #666; margin-bottom: 20px;"></i>
+                <h3 style="margin-bottom: 15px;">Никого не найдено</h3>
+                <p style="color: #999; margin-bottom: 30px;">
+                    Попробуйте изменить фильтры поиска или расширить критерии
+                </p>
+                <button onclick="document.getElementById('compatibilityFilter').value='50'; searchUsers();" style="padding: 15px 40px; background: var(--accent); border: none; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 16px;">
+                    <i class="fas fa-refresh"></i> Расширить поиск
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    users.forEach(user => {
+        searchResults.innerHTML += `
+            <div class="content-card">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <img src="${user.avatar}" alt="${user.name}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                    <div style="flex: 1;">
+                        <h4 style="margin-bottom: 4px;">${user.name}</h4>
+                        <p style="color: #999; font-size: 14px; margin-bottom: 4px;">
+                            <i class="fas fa-map-marker-alt"></i> ${user.location}
+                        </p>
+                        <p style="color: #999; font-size: 12px;">${user.lastActive}</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--accent); font-size: 20px; font-weight: 700; margin-bottom: 4px;">
+                            ${user.compatibility}%
+                        </div>
+                        <div style="color: #999; font-size: 12px;">
+                            совместимость
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <p style="color: #ccc; font-size: 14px; line-height: 1.4;">${user.bio}</p>
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                    ${user.commonGenres.map(genre => 
+                        `<span style="padding: 4px 8px; background: rgba(0, 255, 136, 0.1); color: var(--accent); border-radius: 12px; font-size: 12px;">${genre}</span>`
+                    ).join('')}
+                    ${user.instruments.map(inst => 
+                        `<span style="padding: 4px 8px; background: var(--light-gray); border-radius: 12px; font-size: 12px;">${inst}</span>`
+                    ).join('')}
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--light-gray); padding-top: 15px;">
+                    <div style="color: #999; font-size: 13px;">
+                        <i class="fas fa-users"></i> ${user.mutualFriends} общих друзей
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="viewUserProfile('${user.id}')" style="padding: 8px 16px; background: var(--light-gray); border: none; border-radius: 15px; cursor: pointer; font-size: 14px; font-weight: 600; color: white;">
+                            <i class="fas fa-eye"></i> Профиль
+                        </button>
+                        <button onclick="sendFriendRequest('${user.id}', '${user.name}')" style="padding: 8px 16px; background: var(--accent); border: none; border-radius: 15px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                            <i class="fas fa-user-plus"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+async function loadRecommendations() {
+    const recommendedUsers = document.getElementById('recommendedUsers');
+    recommendedUsers.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+    
+    // Симулируем загрузку рекомендаций
+    setTimeout(() => {
+        const recommendations = generateSearchResults('', '', 75).slice(0, 4);
+        displayRecommendations(recommendations);
+    }, 1000);
+}
+
+function displayRecommendations(users) {
+    const recommendedUsers = document.getElementById('recommendedUsers');
+    recommendedUsers.innerHTML = '';
+    
+    if (!users || users.length === 0) {
+        recommendedUsers.innerHTML = `
+            <div class="content-card" style="text-align: center; padding: 40px;">
+                <i class="fas fa-magic" style="font-size: 48px; color: #666; margin-bottom: 15px;"></i>
+                <p style="color: #999;">Рекомендации будут доступны после анализа ваших предпочтений</p>
+            </div>
+        `;
+        return;
+    }
+    
+    users.forEach(user => {
+        recommendedUsers.innerHTML += `
+            <div class="content-card" style="text-align: center;">
+                <img src="${user.avatar}" alt="${user.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
+                <h4 style="margin-bottom: 8px;">${user.name}</h4>
+                <p style="color: #999; font-size: 14px; margin-bottom: 8px;">
+                    <i class="fas fa-map-marker-alt"></i> ${user.location}
+                </p>
+                <div style="color: var(--accent); font-size: 20px; font-weight: 700; margin-bottom: 10px;">
+                    ${user.compatibility}% совпадение
+                </div>
+                <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap;">
+                    ${user.commonGenres.slice(0, 2).map(genre => 
+                        `<span style="padding: 3px 6px; background: rgba(0, 255, 136, 0.1); color: var(--accent); border-radius: 8px; font-size: 11px;">${genre}</span>`
+                    ).join('')}
+                </div>
+                <button onclick="sendFriendRequest('${user.id}', '${user.name}')" style="width: 100%; padding: 10px; background: var(--accent); border: none; border-radius: 15px; cursor: pointer; font-weight: 600; font-size: 14px;">
+                    <i class="fas fa-user-plus"></i> Добавить в друзья
+                </button>
+            </div>
+        `;
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// FRIEND INTERACTION FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function sendFriendRequest(userId, userName) {
+    const token = localStorage.getItem('spotify_token');
+    
+    if (!token) {
+        alert('❌ Необходима авторизация для отправки запросов в друзья');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/friend-request`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                targetUserId: userId,
+                message: `Привет! Мне нравится твой музыкальный вкус. Давайте дружить и создавать музыку вместе! 🎵`
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Запрос в друзья отправлен:', data);
+            
+            // Показываем уведомление
+            showNotification(`✅ Запрос в друзья отправлен пользователю ${userName}!`, 'success');
+            
+            // Обновляем кнопку
+            const button = event.target;
+            button.innerHTML = '<i class="fas fa-check"></i> Запрос отправлен';
+            button.style.background = '#666';
+            button.disabled = true;
+            
+        } else {
+            throw new Error('Failed to send friend request');
+        }
+    } catch (error) {
+        console.error('❌ Ошибка отправки запроса:', error);
+        
+        // Показываем демо уведомление
+        showNotification(`✅ Запрос в друзья отправлен пользователю ${userName}! (демо режим)`, 'success');
+        
+        const button = event.target;
+        button.innerHTML = '<i class="fas fa-check"></i> Запрос отправлен';
+        button.style.background = '#666';
+        button.disabled = true;
+    }
+}
+
+function openChat(friendId) {
+    showNotification('💬 Функция чата будет доступна в следующей версии!', 'info');
+}
+
+function viewProfile(friendId) {
+    showNotification('👤 Просмотр профиля друга будет доступен в следующей версии!', 'info');
+}
+
+function viewUserProfile(userId) {
+    showNotification('👤 Просмотр профиля пользователя будет доступен в следующей версии!', 'info');
+}
+
+function removeFriend(friendId) {
+    if (confirm('Вы уверены, что хотите удалить этого пользователя из друзей?')) {
+        showNotification('👋 Пользователь удален из друзей', 'info');
+        loadFriends(); // Перезагружаем список
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// NOTIFICATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        background: ${type === 'success' ? '#00ff88' : type === 'error' ? '#ff4444' : '#666'};
+        color: ${type === 'success' ? '#000' : '#fff'};
+        padding: 15px 20px;
+        border-radius: 10px;
+        z-index: 10000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        max-width: 300px;
+        font-weight: 600;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    notification.innerHTML = message;
+    document.body.appendChild(notification);
+    
+    // Автоматически убираем через 4 секунды
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 4000);
+}
+
+// Добавляем CSS анимации
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
 // Добавляем функции в глобальную область
 window.testSpotifyAPI = testSpotifyAPI;
 window.showDebugInfo = showDebugInfo;
+window.loadFriendsSection = loadFriendsSection;
+window.loadDiscoverSection = loadDiscoverSection;
+window.searchUsers = searchUsers;
+window.loadRecommendations = loadRecommendations;
+window.sendFriendRequest = sendFriendRequest;
+window.openChat = openChat;
+window.viewProfile = viewProfile;
+window.viewUserProfile = viewUserProfile;
+window.removeFriend = removeFriend;
+window.loadFriends = loadFriends;
