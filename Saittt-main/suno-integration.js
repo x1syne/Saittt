@@ -8,9 +8,10 @@ class MusicAIIntegration {
             // SunoAPI.org - ЛУЧШИЙ вариант (профессиональное качество)
             sunoapi: {
                 apiUrl: 'https://api.sunoapi.org/api/v1',
-                // Получите токен на https://sunoapi.org/ru/billing
-                apiKey: '4cf552d6a6f45d9e09df6846d0e5f624', // Ваш активный токен
+                // Бесплатный API ключ
+                apiKey: '4cf552d6a6f45d9e09df6846d0e5f624', // Ваш бесплатный токен
                 enabled: true, // АКТИВИРОВАНО!
+                isFree: true, // Бесплатный план
                 features: {
                     maxDuration: 240, // До 4 минут!
                     highQuality: true,
@@ -98,74 +99,137 @@ class MusicAIIntegration {
         }
     }
 
-    // Генерация через SunoAPI.org (ЛУЧШИЙ вариант - профессиональное качество)
+    // Генерация через SunoAPI.org (исправленная версия для бесплатного API)
     async generateWithSunoAPI(params) {
         const prompt = this.createSunoPrompt(params);
         
         try {
-            console.log('🎵 Генерируем через SunoAPI.org (до 4 минут, профессиональное качество)');
+            console.log('🎵 Пробуем SunoAPI.org (бесплатный план)');
             console.log('📝 Промпт:', prompt);
             
-            // Создаем задачу генерации
-            const createResponse = await fetch(`${this.config.sunoapi.apiUrl}/generate`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    make_instrumental: params.instrumental !== false, // По умолчанию инструментальная
-                    wait_audio: false, // Асинхронная генерация
-                    model: 'chirp-v3-5', // Последняя модель
-                    tags: this.createSunoTags(params)
-                })
-            });
+            // Правильные эндпоинты для SunoAPI.org
+            const endpoints = [
+                'https://api.sunoapi.org/api/generate',
+                'https://sunoapi.org/api/generate',
+                'https://api.sunoapi.org/generate'
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    console.log('🔄 Пробуем эндпоинт:', endpoint);
+                    
+                    const requestBody = {
+                        prompt: prompt,
+                        make_instrumental: params.instrumental !== false,
+                        wait_audio: false, // Асинхронная генерация
+                        model_version: 'v3.5', // Актуальная версия модели
+                        tags: this.createSunoTags(params)
+                    };
+                    
+                    console.log('📤 Отправляем запрос:', requestBody);
+                    
+                    const createResponse = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
+                            'Content-Type': 'application/json',
+                            'api-key': this.config.sunoapi.apiKey,
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
 
-            if (!createResponse.ok) {
-                const errorData = await createResponse.text();
-                throw new Error(`SunoAPI Error: ${createResponse.status} - ${errorData}`);
+                    console.log('📥 Статус ответа:', createResponse.status);
+                    
+                    if (createResponse.ok) {
+                        const createResult = await createResponse.json();
+                        console.log('✅ SunoAPI ответил:', createResult);
+                        
+                        // Проверяем разные форматы ответа
+                        if (createResult.success || createResult.status === 'success') {
+                            const tracks = createResult.data || createResult.clips || createResult.tracks || [createResult];
+                            
+                            if (tracks && tracks.length > 0) {
+                                const track = tracks[0];
+                                
+                                // Если трек еще генерируется, ждем
+                                if (track.status === 'queued' || track.status === 'generating') {
+                                    console.log('⏳ Трек в очереди, ожидаем...');
+                                    const finalTrack = await this.pollSunoResult(track.id);
+                                    
+                                    return {
+                                        success: true,
+                                        audioUrl: finalTrack.audio_url || finalTrack.url,
+                                        imageUrl: finalTrack.image_url || finalTrack.image,
+                                        duration: finalTrack.duration || params.duration || 120,
+                                        provider: 'SunoAPI.org (бесплатный план)',
+                                        quality: 'Высокое качество',
+                                        model: 'Suno AI v3.5',
+                                        title: finalTrack.title || 'Generated Track',
+                                        tags: finalTrack.tags || this.createSunoTags(params),
+                                        taskId: finalTrack.id
+                                    };
+                                }
+                                
+                                // Если трек уже готов
+                                if (track.audio_url || track.url) {
+                                    return {
+                                        success: true,
+                                        audioUrl: track.audio_url || track.url,
+                                        imageUrl: track.image_url || track.image,
+                                        duration: track.duration || params.duration || 120,
+                                        provider: 'SunoAPI.org (бесплатный план)',
+                                        quality: 'Высокое качество',
+                                        model: 'Suno AI v3.5',
+                                        title: track.title || 'Generated Track',
+                                        tags: track.tags || this.createSunoTags(params),
+                                        taskId: track.id
+                                    };
+                                }
+                            }
+                        }
+                        
+                        // Если есть ошибка в ответе
+                        if (createResult.error) {
+                            console.error('❌ Ошибка API:', createResult.error);
+                            throw new Error(createResult.error);
+                        }
+                    } else {
+                        const errorText = await createResponse.text();
+                        console.error('❌ HTTP ошибка:', createResponse.status, errorText);
+                        
+                        // Специальная обработка для бесплатного API
+                        if (createResponse.status === 402) {
+                            throw new Error('Превышен лимит бесплатного API. Нужна подписка.');
+                        }
+                        if (createResponse.status === 401) {
+                            throw new Error('Неверный API ключ. Проверьте токен.');
+                        }
+                        if (createResponse.status === 429) {
+                            throw new Error('Слишком много запросов. Попробуйте позже.');
+                        }
+                    }
+                } catch (endpointError) {
+                    console.log('⚠️ Эндпоинт недоступен:', endpoint, endpointError.message);
+                    continue;
+                }
             }
-
-            const createResult = await createResponse.json();
-            console.log('✅ Задача создана:', createResult);
             
-            if (!createResult.success || !createResult.data || createResult.data.length === 0) {
-                throw new Error('Не удалось создать задачу генерации');
-            }
-
-            const taskId = createResult.data[0].id;
-            
-            // Ждем завершения генерации
-            const result = await this.pollSunoResult(taskId);
-            
-            return {
-                success: true,
-                audioUrl: result.audio_url,
-                imageUrl: result.image_url, // SunoAPI также генерирует обложки!
-                duration: result.duration || params.duration || 120,
-                provider: 'SunoAPI.org (профессиональное качество)',
-                quality: 'Высокое качество (320kbps)',
-                model: 'Suno AI v3.5',
-                title: result.title,
-                tags: result.tags,
-                taskId: taskId
-            };
+            throw new Error('Все эндпоинты SunoAPI недоступны');
 
         } catch (error) {
-            console.error('❌ SunoAPI Error:', error);
+            console.error('❌ SunoAPI полностью недоступен:', error);
             
-            // Фоллбэк на следующий доступный провайдер
-            if (this.config.replicate.enabled && this.config.replicate.apiKey !== 'YOUR_REPLICATE_TOKEN') {
-                console.log('🔄 Переключаемся на Replicate...');
-                return await this.generateWithReplicate(params);
-            } else if (this.config.huggingface.enabled) {
-                console.log('🔄 Переключаемся на Hugging Face...');
-                return await this.generateWithHuggingFace(params);
-            } else {
-                console.log('🔄 Переключаемся на демо режим...');
-                return await this.generateDemo(params);
+            // Показываем пользователю конкретную ошибку
+            if (error.message.includes('API ключ') || error.message.includes('токен')) {
+                throw new Error('Проблема с API ключом. Проверьте правильность токена SunoAPI.');
             }
+            if (error.message.includes('лимит') || error.message.includes('подписка')) {
+                throw new Error('Превышен лимит бесплатного API. Нужна подписка SunoAPI.');
+            }
+            
+            // Быстрый фоллбэк на Hugging Face (работает всегда)
+            console.log('🔄 Переключаемся на Hugging Face (работает всегда)...');
+            return await this.generateWithHuggingFace(params);
         }
     }
 
@@ -264,43 +328,66 @@ class MusicAIIntegration {
         
         for (let i = 0; i < maxAttempts; i++) {
             try {
-                const response = await fetch(`${this.config.sunoapi.apiUrl}/get?ids=${taskId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Status check failed: ${response.status}`);
-                }
-
-                const result = await response.json();
+                // Пробуем разные эндпоинты для проверки статуса
+                const statusEndpoints = [
+                    `https://api.sunoapi.org/api/get?ids=${taskId}`,
+                    `https://sunoapi.org/api/get?ids=${taskId}`,
+                    `https://api.sunoapi.org/get?ids=${taskId}`
+                ];
                 
-                if (result.success && result.data && result.data.length > 0) {
-                    const track = result.data[0];
-                    
-                    if (track.status === 'complete' && track.audio_url) {
-                        console.log('✅ Трек готов!');
-                        return track;
+                for (const endpoint of statusEndpoints) {
+                    try {
+                        const response = await fetch(endpoint, {
+                            headers: {
+                                'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
+                                'api-key': this.config.sunoapi.apiKey,
+                            }
+                        });
+
+                        if (!response.ok) {
+                            continue; // Пробуем следующий эндпоинт
+                        }
+
+                        const result = await response.json();
+                        console.log(`📊 Статус проверка ${i + 1}:`, result);
+                        
+                        // Проверяем разные форматы ответа
+                        const tracks = result.data || result.clips || result.tracks || [result];
+                        
+                        if (tracks && tracks.length > 0) {
+                            const track = tracks.find(t => t.id === taskId) || tracks[0];
+                            
+                            if (track.status === 'complete' || track.status === 'success') {
+                                if (track.audio_url || track.url) {
+                                    console.log('✅ Трек готов!');
+                                    return track;
+                                }
+                            }
+                            
+                            if (track.status === 'error' || track.status === 'failed') {
+                                throw new Error('Генерация завершилась с ошибкой');
+                            }
+                            
+                            // Показываем прогресс
+                            console.log(`⏳ Статус: ${track.status} (попытка ${i + 1}/${maxAttempts})`);
+                            break; // Выходим из цикла эндпоинтов, но продолжаем ожидание
+                        }
+                        
+                    } catch (endpointError) {
+                        console.log('⚠️ Эндпоинт статуса недоступен:', endpoint);
+                        continue;
                     }
-                    
-                    if (track.status === 'error') {
-                        throw new Error('Генерация завершилась с ошибкой');
-                    }
-                    
-                    // Показываем прогресс
-                    console.log(`⏳ Статус: ${track.status} (попытка ${i + 1}/${maxAttempts})`);
                 }
                 
             } catch (error) {
                 console.error('Ошибка проверки статуса:', error);
             }
             
-            // Ждем 3 секунды перед следующей проверкой
-            await this.delay(3000);
+            // Ждем 5 секунд перед следующей проверкой (для бесплатного API)
+            await this.delay(5000);
         }
         
-        throw new Error('Превышено время ожидания генерации (3 минуты)');
+        throw new Error('Превышено время ожидания генерации (5 минут)');
     }
 
     // Генерация через Replicate (альтернативный вариант)

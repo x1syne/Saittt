@@ -1017,6 +1017,19 @@
                 Ваш браузер не поддерживает аудио элементы.
             </audio>
 
+            <!-- Кнопки управления треком -->
+            <div class="track-controls" style="display: flex; gap: 10px; margin: 20px 0; justify-content: center;">
+                <button onclick="downloadTrack()" class="control-btn" style="background: var(--success); padding: 12px 20px; border: none; border-radius: 15px; cursor: pointer; font-weight: 600; color: white; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-download"></i> Скачать MP3
+                </button>
+                <button onclick="regenerateTrack()" class="control-btn" style="background: var(--accent); padding: 12px 20px; border: none; border-radius: 15px; cursor: pointer; font-weight: 600; color: white; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-redo"></i> Создать еще
+                </button>
+                <button onclick="shareTrack()" class="control-btn" style="background: var(--gray-600); padding: 12px 20px; border: none; border-radius: 15px; cursor: pointer; font-weight: 600; color: white; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-share"></i> Поделиться
+                </button>
+            </div>
+
             <div class="track-info">
                 <div class="info-item">
                     <div class="info-label">Длительность</div>

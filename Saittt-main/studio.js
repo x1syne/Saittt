@@ -15,7 +15,80 @@ class SunoAIStudio {
         this.updateCreditsDisplay();
         this.setupEventListeners();
         this.loadUserPreferences();
+        this.testAPIConnection();
         console.log('🎵 SoundMate AI Studio initialized');
+    }
+
+    async testAPIConnection() {
+        // Тестируем подключение к SunoAPI в фоне
+        if (window.MusicAIIntegration) {
+            try {
+                const musicAI = new window.MusicAIIntegration();
+                
+                // Простой тест подключения
+                const testEndpoint = 'https://api.sunoapi.org/api/get_limit';
+                const response = await fetch(testEndpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${musicAI.config.sunoapi.apiKey}`,
+                        'api-key': musicAI.config.sunoapi.apiKey,
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ SunoAPI подключен:', result);
+                    
+                    // Обновляем UI с информацией о лимитах
+                    if (result.credits_left !== undefined) {
+                        this.showNotification(`🎵 SunoAPI подключен! Осталось кредитов: ${result.credits_left}`, 'success');
+                    } else {
+                        this.showNotification('🎵 SunoAPI подключен и готов к работе!', 'success');
+                    }
+                } else {
+                    console.warn('⚠️ SunoAPI недоступен:', response.status);
+                    this.showAPIWarning();
+                }
+            } catch (error) {
+                console.warn('⚠️ Ошибка подключения к SunoAPI:', error);
+                this.showAPIWarning();
+            }
+        }
+    }
+
+    showAPIWarning() {
+        // Показываем предупреждение о проблемах с API
+        const warningBanner = document.createElement('div');
+        warningBanner.style.cssText = `
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        `;
+        
+        warningBanner.innerHTML = `
+            ⚠️ SunoAPI недоступен. Будут созданы демо-треки. 
+            <a href="#" onclick="this.parentElement.remove(); studioInstance.upgradeToPremium();" style="color: #fff; text-decoration: underline;">
+                Настроить API
+            </a>
+        `;
+        
+        document.body.appendChild(warningBanner);
+        
+        // Автоматически скрываем через 10 секунд
+        setTimeout(() => {
+            if (warningBanner.parentElement) {
+                warningBanner.remove();
+            }
+        }, 10000);
     }
 
     setupEventListeners() {
@@ -193,28 +266,50 @@ class SunoAIStudio {
                 const musicAI = new window.MusicAIIntegration();
                 
                 try {
+                    // Показываем статус попытки подключения к API
+                    this.updateProgressStep('step2', 'active', 'Подключение к SunoAPI...');
+                    
                     // Attempt real API generation
                     result = await musicAI.generateMusic(generationData);
                     generationData.audioUrl = result.audioUrl;
                     generationData.isReal = true;
                     generationData.provider = result.provider;
                     generationData.quality = result.quality;
+                    generationData.model = result.model;
                     
                     this.showNotification(`🎵 Трек создан с помощью ${result.provider}!`, 'success');
                 } catch (apiError) {
                     console.warn('API недоступен, используем демо:', apiError.message);
+                    
+                    // Показываем конкретную ошибку пользователю
+                    let errorMessage = 'Демо-трек создан';
+                    if (apiError.message.includes('API ключ') || apiError.message.includes('токен')) {
+                        errorMessage = '⚠️ Проблема с API ключом. Создан демо-трек.';
+                    } else if (apiError.message.includes('лимит') || apiError.message.includes('подписка')) {
+                        errorMessage = '⚠️ Превышен лимит бесплатного API. Создан демо-трек.';
+                    } else if (apiError.message.includes('недоступен')) {
+                        errorMessage = '⚠️ SunoAPI временно недоступен. Создан демо-трек.';
+                    }
+                    
                     // Fallback to simulation
+                    this.updateProgressStep('step2', 'active', 'Создание демо-трека...');
                     await this.simulateSunoAPI(generationData);
                     generationData.isReal = false;
+                    generationData.provider = 'Демо режим';
+                    generationData.quality = 'Демо качество';
+                    generationData.apiError = apiError.message;
                     
-                    this.showNotification('🎵 Демо-трек создан (настройте API для реальной генерации)', 'info');
+                    this.showNotification(errorMessage, 'warning');
                 }
             } else {
                 // No API integration available
+                this.updateProgressStep('step2', 'active', 'Создание демо-трека...');
                 await this.simulateSunoAPI(generationData);
                 generationData.isReal = false;
+                generationData.provider = 'Демо режим';
+                generationData.quality = 'Демо качество';
                 
-                this.showNotification('🎵 Демо-трек создан', 'info');
+                this.showNotification('🎵 Демо-трек создан (подключите SunoAPI для реальной генерации)', 'info');
             }
             
             // Show result
@@ -334,15 +429,107 @@ class SunoAIStudio {
     }
 
     getDemoAudioUrl(style) {
-        // In production, this would return the actual Suno AI generated audio URL
-        const demoUrls = {
-            orchestral: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-            lofi: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-            pop: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-            rock: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
-            electronic: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav'
+        // Создаем синтезированный демо-трек для каждого стиля
+        return this.generateSynthAudio(style);
+    }
+
+    generateSynthAudio(style) {
+        try {
+            // Создаем AudioContext для генерации демо-аудио
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const duration = 30; // 30 секунд демо
+            const sampleRate = audioContext.sampleRate;
+            const frameCount = sampleRate * duration;
+            
+            const audioBuffer = audioContext.createBuffer(2, frameCount, sampleRate);
+            
+            // Генерируем разные мелодии для разных стилей
+            for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                const channelData = audioBuffer.getChannelData(channel);
+                
+                for (let i = 0; i < frameCount; i++) {
+                    const time = i / sampleRate;
+                    let sample = 0;
+                    
+                    // Разные алгоритмы для разных стилей
+                    switch (style) {
+                        case 'orchestral':
+                            // Оркестровый - сложная гармония
+                            sample = Math.sin(2 * Math.PI * 440 * time) * 0.3 +
+                                    Math.sin(2 * Math.PI * 554.37 * time) * 0.2 +
+                                    Math.sin(2 * Math.PI * 659.25 * time) * 0.1;
+                            break;
+                        case 'lofi':
+                            // Lofi - мягкие синусоиды с шумом
+                            sample = Math.sin(2 * Math.PI * 220 * time) * 0.4 +
+                                    (Math.random() - 0.5) * 0.1;
+                            break;
+                        case 'rock':
+                            // Рок - искаженный звук
+                            sample = Math.sign(Math.sin(2 * Math.PI * 330 * time)) * 0.5;
+                            break;
+                        case 'electronic':
+                            // Электронный - пилообразная волна
+                            sample = (2 * (time * 440 % 1) - 1) * 0.3;
+                            break;
+                        default:
+                            // По умолчанию - простая синусоида
+                            sample = Math.sin(2 * Math.PI * 440 * time) * 0.3;
+                    }
+                    
+                    // Добавляем огибающую (fade in/out)
+                    const envelope = Math.min(time * 4, 1) * Math.min((duration - time) * 4, 1);
+                    channelData[i] = sample * envelope;
+                }
+            }
+            
+            // Конвертируем в WAV blob
+            const wavBlob = this.audioBufferToWav(audioBuffer);
+            return URL.createObjectURL(wavBlob);
+            
+        } catch (error) {
+            console.error('Ошибка создания демо-аудио:', error);
+            // Fallback - возвращаем data URL с тишиной
+            return 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
+        }
+    }
+
+    audioBufferToWav(buffer) {
+        const length = buffer.length;
+        const arrayBuffer = new ArrayBuffer(44 + length * 2);
+        const view = new DataView(arrayBuffer);
+        
+        // WAV header
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
         };
-        return demoUrls[style] || demoUrls.orchestral;
+        
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + length * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, buffer.sampleRate, true);
+        view.setUint32(28, buffer.sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, length * 2, true);
+        
+        // Convert audio data
+        const channelData = buffer.getChannelData(0);
+        let offset = 44;
+        for (let i = 0; i < length; i++) {
+            const sample = Math.max(-1, Math.min(1, channelData[i]));
+            view.setInt16(offset, sample * 0x7FFF, true);
+            offset += 2;
+        }
+        
+        return new Blob([arrayBuffer], { type: 'audio/wav' });
     }
 
     formatDuration(seconds) {
@@ -747,33 +934,178 @@ class SunoAIStudio {
     }
     // Action methods for buttons
     downloadTrack() {
-        if (this.remainingCredits <= 0) {
-            this.showUpgrade();
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioUrl = audioPlayer.src;
+        
+        if (!audioUrl || audioUrl === '') {
+            this.showNotification('Нет трека для скачивания. Сначала создайте музыку!', 'error');
             return;
         }
-        this.showNotification('В бесплатной версии скачивание недоступно. Перейдите на Premium для скачивания без водяных знаков.', 'warning');
+
+        try {
+            // Создаем ссылку для скачивания
+            const link = document.createElement('a');
+            link.href = audioUrl;
+            
+            // Генерируем имя файла
+            const trackTitle = document.getElementById('resultTitle').textContent || 'Generated Track';
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            const fileName = `${trackTitle.replace(/[^a-zA-Z0-9а-яА-Я\s]/g, '')}_${timestamp}.mp3`;
+            
+            link.download = fileName;
+            link.style.display = 'none';
+            
+            // Добавляем в DOM и кликаем
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Показываем уведомление
+            if (this.remainingCredits <= 0) {
+                this.showNotification('🎵 Трек скачан! В бесплатной версии может содержать водяной знак.', 'success');
+            } else {
+                this.showNotification('🎵 Трек успешно скачан!', 'success');
+            }
+            
+        } catch (error) {
+            console.error('Ошибка скачивания:', error);
+            
+            // Fallback - открываем в новой вкладке
+            try {
+                window.open(audioUrl, '_blank');
+                this.showNotification('Трек открыт в новой вкладке. Сохраните его вручную.', 'info');
+            } catch (fallbackError) {
+                this.showNotification('Ошибка скачивания. Попробуйте еще раз.', 'error');
+            }
+        }
     }
 
     shareTrack() {
         const trackTitle = document.getElementById('resultTitle').textContent;
+        const audioPlayer = document.getElementById('audioPlayer');
+        
+        if (!audioPlayer.src) {
+            this.showNotification('Нет трека для публикации. Сначала создайте музыку!', 'error');
+            return;
+        }
+        
         const shareData = {
-            title: trackTitle,
-            text: `Послушайте мой ${trackTitle}, созданный с помощью SoundMate AI Studio!`,
+            title: `🎵 ${trackTitle}`,
+            text: `Послушайте мой ${trackTitle}, созданный с помощью SoundMate AI Studio! 🎶`,
             url: window.location.href
         };
 
-        if (navigator.share) {
-            navigator.share(shareData);
+        // Пробуем нативный API Share
+        if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+            navigator.share(shareData).then(() => {
+                this.showNotification('Трек успешно опубликован!', 'success');
+            }).catch((error) => {
+                console.log('Ошибка публикации:', error);
+                this.fallbackShare(shareData);
+            });
         } else {
-            // Fallback - copy to clipboard
-            navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-            this.showNotification('Ссылка скопирована в буфер обмена!', 'success');
+            this.fallbackShare(shareData);
         }
+    }
+
+    fallbackShare(shareData) {
+        // Создаем модальное окно для выбора способа публикации
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="background: var(--gray-800); padding: 30px; border-radius: 20px; max-width: 400px; text-align: center;">
+                <h3 style="margin-bottom: 20px; color: var(--accent);">🎵 Поделиться треком</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button onclick="this.copyToClipboard()" style="padding: 12px 20px; background: var(--accent); border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">
+                        📋 Скопировать ссылку
+                    </button>
+                    
+                    <button onclick="this.shareToTelegram()" style="padding: 12px 20px; background: #0088cc; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">
+                        📱 Telegram
+                    </button>
+                    
+                    <button onclick="this.shareToVK()" style="padding: 12px 20px; background: #4c75a3; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">
+                        🌐 ВКонтакте
+                    </button>
+                    
+                    <button onclick="this.shareToWhatsApp()" style="padding: 12px 20px; background: #25d366; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">
+                        💬 WhatsApp
+                    </button>
+                </div>
+                
+                <button onclick="this.parentElement.parentElement.remove()" style="margin-top: 20px; padding: 8px 16px; background: var(--gray-600); border: none; border-radius: 8px; color: white; cursor: pointer;">
+                    Закрыть
+                </button>
+            </div>
+        `;
+        
+        // Добавляем обработчики
+        modal.querySelector('button[onclick="this.copyToClipboard()"]').onclick = () => {
+            navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`).then(() => {
+                this.showNotification('Ссылка скопирована в буфер обмена!', 'success');
+                modal.remove();
+            });
+        };
+        
+        modal.querySelector('button[onclick="this.shareToTelegram()"]').onclick = () => {
+            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareData.url)}&text=${encodeURIComponent(shareData.text)}`;
+            window.open(telegramUrl, '_blank');
+            modal.remove();
+        };
+        
+        modal.querySelector('button[onclick="this.shareToVK()"]').onclick = () => {
+            const vkUrl = `https://vk.com/share.php?url=${encodeURIComponent(shareData.url)}&title=${encodeURIComponent(shareData.title)}&description=${encodeURIComponent(shareData.text)}`;
+            window.open(vkUrl, '_blank');
+            modal.remove();
+        };
+        
+        modal.querySelector('button[onclick="this.shareToWhatsApp()"]').onclick = () => {
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareData.text + ' ' + shareData.url)}`;
+            window.open(whatsappUrl, '_blank');
+            modal.remove();
+        };
+        
+        document.body.appendChild(modal);
     }
 
     regenerateTrack() {
         if (this.remainingCredits > 0) {
-            this.generateMusic();
+            // Добавляем вариативность к промпту для получения нового результата
+            const originalPrompt = document.getElementById('musicPrompt').value;
+            const variations = [
+                'с другой аранжировкой',
+                'в альтернативном стиле',
+                'с новой интерпретацией',
+                'с измененным темпом',
+                'с другими инструментами'
+            ];
+            
+            const randomVariation = variations[Math.floor(Math.random() * variations.length)];
+            const newPrompt = `${originalPrompt} ${randomVariation}`;
+            
+            // Временно изменяем промпт
+            document.getElementById('musicPrompt').value = newPrompt;
+            
+            // Генерируем новый трек
+            this.generateMusic().then(() => {
+                // Возвращаем оригинальный промпт
+                document.getElementById('musicPrompt').value = originalPrompt;
+            });
+            
+            this.showNotification('🔄 Создаем новую версию трека...', 'info');
         } else {
             this.showUpgrade();
         }
