@@ -7,12 +7,12 @@ class MusicAIIntegration {
         this.config = {
             // Hugging Face - БЕСПЛАТНО и просто!
             huggingface: {
-                // Используем официальную модель Suno Bark!
-                apiUrl: 'https://api-inference.huggingface.co/models/suno/bark',
+                // Используем MusicGen для генерации музыки
+                apiUrl: 'https://api-inference.huggingface.co/models/facebook/musicgen-large',
                 // Получите токен на https://huggingface.co/settings/tokens
                 apiKey: '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', // Ваш токен Hugging Face
-                model: 'suno/bark', // Официальная модель Suno!
-                fallbackModel: 'facebook/musicgen-small' // Запасная модель
+                model: 'facebook/musicgen-large', // Лучшая модель для музыки
+                fallbackModel: 'facebook/musicgen-medium' // Запасная модель
             },
             // Mubert - платный, но качественный
             mubert: {
@@ -68,57 +68,119 @@ class MusicAIIntegration {
         const prompt = this.createSunoBarkPrompt(params);
         
         try {
-            // Пробуем сначала Suno Bark
-            let response = await this.tryHuggingFaceModel(this.config.huggingface.apiUrl, prompt, params);
+            console.log('🎵 Генерируем музыку с промптом:', prompt);
+            console.log('📊 Параметры:', params);
+            console.log('🔗 Используем модель:', this.config.huggingface.apiUrl);
+            console.log('🎯 Это Suno Bark:', this.config.huggingface.apiUrl.includes('suno/bark'));
             
-            if (!response.ok && this.config.huggingface.fallbackModel) {
-                console.log('Пробуем запасную модель...');
-                // Если Suno Bark недоступен, используем MusicGen
-                const fallbackUrl = `https://api-inference.huggingface.co/models/${this.config.huggingface.fallbackModel}`;
-                response = await this.tryHuggingFaceModel(fallbackUrl, this.createMusicPrompt(params), params);
+            // Список моделей для попытки (от лучшей к простой)
+            const modelsToTry = [
+                'facebook/musicgen-large',
+                'facebook/musicgen-medium', 
+                'facebook/musicgen-small'
+            ];
+            
+            let response = null;
+            let usedModel = null;
+            
+            // Пробуем модели по очереди
+            for (const model of modelsToTry) {
+                const modelUrl = `https://api-inference.huggingface.co/models/${model}`;
+                console.log(`🎵 Пробуем модель: ${model}`);
+                
+                try {
+                    response = await this.tryHuggingFaceModel(modelUrl, prompt, params);
+                    
+                    if (response.ok) {
+                        usedModel = model;
+                        console.log(`✅ Модель ${model} работает!`);
+                        break;
+                    } else {
+                        console.warn(`⚠️ Модель ${model} недоступна:`, response.status);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ Ошибка модели ${model}:`, error.message);
+                }
             }
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorText = await response.text();
+                console.error('❌ Полная ошибка:', errorText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
             }
 
-            // Hugging Face возвращает аудио как blob
+            // Проверяем размер ответа
             const audioBlob = await response.blob();
-            const audioUrl = URL.createObjectURL(audioBlob);
+            console.log('📁 Размер аудио файла:', audioBlob.size, 'байт');
+            
+            if (audioBlob.size < 50000) { // Менее 50KB = слишком короткий трек
+                console.error('❌ Файл слишком маленький:', audioBlob.size, 'байт');
+                throw new Error(`Сгенерированный файл слишком короткий (${audioBlob.size} байт). Попробуйте другой промпт или модель.`);
+            }
+            
+            // Проверяем что это действительно аудио
+            if (!audioBlob.type.startsWith('audio/')) {
+                console.error('❌ Получен не аудио файл:', audioBlob.type);
+                const text = await audioBlob.text();
+                console.error('📄 Содержимое ответа:', text);
+                throw new Error(`Получен не аудио файл: ${audioBlob.type}`);
+            }
 
-            const modelUsed = response.url.includes('suno/bark') ? 'Suno Bark' : 'MusicGen';
+            const audioUrl = URL.createObjectURL(audioBlob);
+            console.log('✅ Аудио URL создан:', audioUrl);
 
             return {
                 success: true,
                 audioUrl: audioUrl,
                 duration: params.duration || 30,
-                provider: `${modelUsed} (бесплатно)`,
-                quality: modelUsed === 'Suno Bark' ? 'Высокое (Suno)' : 'Стандартное'
+                provider: `${usedModel} (бесплатно)`,
+                quality: usedModel.includes('large') ? 'Высокое качество' : 'Стандартное качество',
+                fileSize: audioBlob.size,
+                model: usedModel
             };
 
         } catch (error) {
-            console.error('Hugging Face API Error:', error);
-            throw new Error(`Ошибка Hugging Face: ${error.message}`);
+            console.error('❌ Hugging Face API Error:', error);
+            throw new Error(`Ошибка генерации: ${error.message}`);
         }
     }
 
     // Вспомогательный метод для запроса к Hugging Face
     async tryHuggingFaceModel(apiUrl, prompt, params) {
-        return await fetch(apiUrl, {
+        console.log('🔗 Отправляем запрос на:', apiUrl);
+        console.log('📝 Промпт:', prompt);
+        
+        const requestBody = {
+            inputs: prompt,
+            parameters: {
+                // Параметры специально для MusicGen
+                duration: Math.min(params.duration || 30, 30),
+                temperature: 1.0,
+                top_k: 250,
+                top_p: 0.0,
+                guidance_scale: 3.0,
+                max_new_tokens: 1024,
+                do_sample: true
+            },
+            options: {
+                wait_for_model: true,
+                use_cache: false
+            }
+        };
+        
+        console.log('📊 Параметры запроса:', requestBody);
+        
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${this.config.huggingface.apiKey}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                inputs: prompt,
-                parameters: {
-                    max_length: Math.min(params.duration || 30, 30), // Макс 30 сек
-                    temperature: 0.8,
-                    do_sample: true
-                }
-            })
+            body: JSON.stringify(requestBody)
         });
+        
+        console.log('📡 Статус ответа:', response.status, response.statusText);
+        return response;
     }
 
     // Создание промпта специально для Suno Bark
@@ -196,37 +258,40 @@ class MusicAIIntegration {
         }
     }
 
-    // Создание промпта для Hugging Face
+    // Создание промпта для Hugging Face MusicGen
     createMusicPrompt(params) {
         const styleDescriptions = {
-            'orchestral': 'classical orchestral music with strings and brass',
-            'lofi': 'lofi hip hop beats with soft piano and vinyl crackle',
-            'pop': 'upbeat pop music with catchy melody',
-            'rock': 'energetic rock music with electric guitars and drums',
-            'electronic': 'electronic dance music with synthesizers',
-            'jazz': 'smooth jazz with piano and saxophone',
-            'classical': 'classical piano composition',
-            'hip-hop': 'hip hop beats with bass and drums'
+            'orchestral': 'orchestral classical music, full symphony orchestra, strings, brass, woodwinds, 120 bpm',
+            'lofi': 'lofi hip hop, chill beats, soft piano, vinyl crackle, relaxing atmosphere, 80 bpm',
+            'pop': 'upbeat pop music, catchy melody, modern production, synthesizers, 128 bpm',
+            'rock': 'rock music, electric guitar, bass guitar, drums, energetic, 140 bpm',
+            'electronic': 'electronic dance music, synthesizers, electronic beats, bass drops, 130 bpm',
+            'jazz': 'smooth jazz, piano, saxophone, double bass, swing rhythm, 100 bpm',
+            'classical': 'classical piano composition, solo piano, elegant melodies, 90 bpm',
+            'hip-hop': 'hip hop instrumental, strong bass, trap beats, 85 bpm'
         };
 
         const moodDescriptions = {
-            'inspiring': 'uplifting and motivational',
-            'happy': 'joyful and cheerful',
-            'calm': 'peaceful and relaxing',
-            'epic': 'dramatic and powerful',
-            'energetic': 'dynamic and energetic',
-            'melancholic': 'sad and emotional'
+            'inspiring': 'uplifting, motivational, positive energy',
+            'happy': 'joyful, cheerful, bright, major key',
+            'calm': 'peaceful, serene, relaxing, ambient',
+            'epic': 'dramatic, cinematic, powerful, grand',
+            'energetic': 'dynamic, high energy, driving rhythm',
+            'melancholic': 'sad, emotional, minor key, contemplative'
         };
 
-        let prompt = styleDescriptions[params.style] || 'instrumental music';
+        let prompt = styleDescriptions[params.style] || 'instrumental music, medium tempo';
         
         if (params.mood && moodDescriptions[params.mood]) {
             prompt += `, ${moodDescriptions[params.mood]}`;
         }
 
-        // Добавляем специфику для школьного гимна
+        // Добавляем длительность в промпт
+        prompt += `, 30 seconds duration, full composition`;
+
+        // Специальный промпт для школьного гимна
         if (params.template === 'school_hymn') {
-            prompt = 'solemn school anthem with choir and orchestra, ceremonial and inspiring';
+            prompt = 'orchestral anthem, solemn and inspiring, brass section, string section, ceremonial march, patriotic, major key, full orchestral arrangement';
         }
 
         return prompt;
