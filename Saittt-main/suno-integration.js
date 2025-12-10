@@ -5,13 +5,26 @@ class MusicAIIntegration {
     constructor() {
         // Конфигурация API
         this.config = {
-            // Replicate - ЛУЧШИЙ вариант для длинной музыки
+            // SunoAPI.org - ЛУЧШИЙ вариант (профессиональное качество)
+            sunoapi: {
+                apiUrl: 'https://api.sunoapi.org/api/v1',
+                // Получите токен на https://sunoapi.org/ru/billing
+                apiKey: '4cf552d6a6f45d9e09df6846d0e5f624', // Ваш активный токен
+                enabled: true, // АКТИВИРОВАНО!
+                features: {
+                    maxDuration: 240, // До 4 минут!
+                    highQuality: true,
+                    customLyrics: true,
+                    instrumentalMode: true,
+                    genres: ['pop', 'rock', 'jazz', 'classical', 'electronic', 'hip-hop', 'country', 'folk']
+                }
+            },
+            // Replicate - альтернативный вариант
             replicate: {
                 apiUrl: 'https://api.replicate.com/v1/predictions',
-                // Получите токен на https://replicate.com/account/api-tokens
-                apiKey: 'YOUR_REPLICATE_TOKEN', // Замените на ваш токен
+                apiKey: 'YOUR_REPLICATE_TOKEN',
                 model: 'meta/musicgen:671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb',
-                enabled: false // Включите когда получите токен
+                enabled: false
             },
             // Hugging Face - для демо (короткие треки)
             huggingface: {
@@ -37,7 +50,15 @@ class MusicAIIntegration {
     }
 
     checkConfiguration() {
-        // Проверяем Replicate (лучший для длинной музыки)
+        // Проверяем SunoAPI.org (ЛУЧШИЙ вариант)
+        if (this.config.sunoapi.apiKey !== 'YOUR_SUNOAPI_TOKEN' && this.config.sunoapi.enabled) {
+            this.isConfigured = true;
+            this.activeProvider = 'sunoapi';
+            console.log('🎵 SunoAPI.org настроен (профессиональное качество, до 4 минут!)');
+            return;
+        }
+        
+        // Проверяем Replicate (хороший для длинной музыки)
         if (this.config.replicate.apiKey !== 'YOUR_REPLICATE_TOKEN' && this.config.replicate.enabled) {
             this.isConfigured = true;
             this.activeProvider = 'replicate';
@@ -64,6 +85,8 @@ class MusicAIIntegration {
         console.log('🎵 Активный провайдер:', this.activeProvider);
         
         switch (this.activeProvider) {
+            case 'sunoapi':
+                return await this.generateWithSunoAPI(params);
             case 'replicate':
                 return await this.generateWithReplicate(params);
             case 'huggingface':
@@ -75,7 +98,212 @@ class MusicAIIntegration {
         }
     }
 
-    // Генерация через Replicate (ЛУЧШИЙ для длинной музыки)
+    // Генерация через SunoAPI.org (ЛУЧШИЙ вариант - профессиональное качество)
+    async generateWithSunoAPI(params) {
+        const prompt = this.createSunoPrompt(params);
+        
+        try {
+            console.log('🎵 Генерируем через SunoAPI.org (до 4 минут, профессиональное качество)');
+            console.log('📝 Промпт:', prompt);
+            
+            // Создаем задачу генерации
+            const createResponse = await fetch(`${this.config.sunoapi.apiUrl}/generate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    make_instrumental: params.instrumental !== false, // По умолчанию инструментальная
+                    wait_audio: false, // Асинхронная генерация
+                    model: 'chirp-v3-5', // Последняя модель
+                    tags: this.createSunoTags(params)
+                })
+            });
+
+            if (!createResponse.ok) {
+                const errorData = await createResponse.text();
+                throw new Error(`SunoAPI Error: ${createResponse.status} - ${errorData}`);
+            }
+
+            const createResult = await createResponse.json();
+            console.log('✅ Задача создана:', createResult);
+            
+            if (!createResult.success || !createResult.data || createResult.data.length === 0) {
+                throw new Error('Не удалось создать задачу генерации');
+            }
+
+            const taskId = createResult.data[0].id;
+            
+            // Ждем завершения генерации
+            const result = await this.pollSunoResult(taskId);
+            
+            return {
+                success: true,
+                audioUrl: result.audio_url,
+                imageUrl: result.image_url, // SunoAPI также генерирует обложки!
+                duration: result.duration || params.duration || 120,
+                provider: 'SunoAPI.org (профессиональное качество)',
+                quality: 'Высокое качество (320kbps)',
+                model: 'Suno AI v3.5',
+                title: result.title,
+                tags: result.tags,
+                taskId: taskId
+            };
+
+        } catch (error) {
+            console.error('❌ SunoAPI Error:', error);
+            
+            // Фоллбэк на следующий доступный провайдер
+            if (this.config.replicate.enabled && this.config.replicate.apiKey !== 'YOUR_REPLICATE_TOKEN') {
+                console.log('🔄 Переключаемся на Replicate...');
+                return await this.generateWithReplicate(params);
+            } else if (this.config.huggingface.enabled) {
+                console.log('🔄 Переключаемся на Hugging Face...');
+                return await this.generateWithHuggingFace(params);
+            } else {
+                console.log('🔄 Переключаемся на демо режим...');
+                return await this.generateDemo(params);
+            }
+        }
+    }
+
+    // Создание промпта для SunoAPI
+    createSunoPrompt(params) {
+        const styleDescriptions = {
+            'orchestral': 'Epic orchestral composition with full symphony orchestra, dramatic strings, powerful brass section, cinematic arrangement',
+            'lofi': 'Chill lofi hip hop beat with soft piano melodies, vinyl crackle, warm bass, relaxing atmosphere',
+            'pop': 'Upbeat modern pop song with catchy melody, synthesizers, electronic drums, radio-friendly production',
+            'rock': 'Energetic rock anthem with electric guitar riffs, driving bass line, powerful drums, stadium sound',
+            'electronic': 'Electronic dance music with synthesizer leads, bass drops, electronic beats, club atmosphere',
+            'jazz': 'Smooth jazz composition with piano, saxophone, double bass, swing rhythm, sophisticated harmony',
+            'classical': 'Classical piano piece with elegant melodies, dynamic expression, concert hall acoustics',
+            'hip-hop': 'Hip hop instrumental with strong bass, trap beats, atmospheric pads, urban vibe',
+            'country': 'Country music with acoustic guitar, fiddle, steel guitar, storytelling melody',
+            'folk': 'Folk acoustic song with guitar fingerpicking, harmonica, natural organic sound'
+        };
+
+        const moodDescriptions = {
+            'inspiring': 'uplifting and motivational, building energy, triumphant feeling',
+            'happy': 'joyful and cheerful, bright major key, positive energy',
+            'calm': 'peaceful and serene, meditative, relaxing ambient',
+            'epic': 'dramatic and cinematic, powerful and grand, heroic theme',
+            'energetic': 'high energy and dynamic, driving rhythm, exciting',
+            'melancholic': 'sad and emotional, minor key, contemplative and introspective',
+            'romantic': 'romantic and tender, gentle melody, heartfelt emotion',
+            'mysterious': 'mysterious and atmospheric, dark ambient, suspenseful'
+        };
+
+        let prompt = styleDescriptions[params.style] || 'instrumental music with medium tempo and balanced arrangement';
+        
+        if (params.mood && moodDescriptions[params.mood]) {
+            prompt += `, ${moodDescriptions[params.mood]}`;
+        }
+
+        // Добавляем специфические детали
+        if (params.duration && params.duration > 60) {
+            prompt += ', extended composition with multiple sections and development';
+        }
+
+        // Специальные промпты для шаблонов
+        if (params.template === 'school_hymn') {
+            prompt = 'Solemn and inspiring school anthem, orchestral arrangement with brass and strings, ceremonial march tempo, patriotic and uplifting, suitable for graduation ceremonies';
+        }
+
+        return prompt;
+    }
+
+    // Создание тегов для SunoAPI
+    createSunoTags(params) {
+        const styleTags = {
+            'orchestral': 'orchestral, classical, cinematic, epic',
+            'lofi': 'lofi, chill, hip hop, relaxing',
+            'pop': 'pop, upbeat, modern, catchy',
+            'rock': 'rock, guitar, energetic, powerful',
+            'electronic': 'electronic, edm, synth, dance',
+            'jazz': 'jazz, smooth, sophisticated, swing',
+            'classical': 'classical, piano, elegant, concert',
+            'hip-hop': 'hip hop, urban, beats, bass',
+            'country': 'country, acoustic, folk, americana',
+            'folk': 'folk, acoustic, organic, traditional'
+        };
+
+        const moodTags = {
+            'inspiring': 'uplifting, motivational, positive',
+            'happy': 'happy, joyful, bright',
+            'calm': 'calm, peaceful, ambient',
+            'epic': 'epic, dramatic, cinematic',
+            'energetic': 'energetic, dynamic, exciting',
+            'melancholic': 'sad, emotional, melancholic',
+            'romantic': 'romantic, tender, love',
+            'mysterious': 'mysterious, dark, atmospheric'
+        };
+
+        let tags = [];
+        
+        if (params.style && styleTags[params.style]) {
+            tags.push(styleTags[params.style]);
+        }
+        
+        if (params.mood && moodTags[params.mood]) {
+            tags.push(moodTags[params.mood]);
+        }
+
+        // Добавляем инструментальный тег если нужно
+        if (params.instrumental !== false) {
+            tags.push('instrumental');
+        }
+
+        return tags.join(', ');
+    }
+
+    // Ожидание результата от SunoAPI
+    async pollSunoResult(taskId, maxAttempts = 60) {
+        console.log('⏳ Ожидаем генерацию трека...');
+        
+        for (let i = 0; i < maxAttempts; i++) {
+            try {
+                const response = await fetch(`${this.config.sunoapi.apiUrl}/get?ids=${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${this.config.sunoapi.apiKey}`,
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Status check failed: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const track = result.data[0];
+                    
+                    if (track.status === 'complete' && track.audio_url) {
+                        console.log('✅ Трек готов!');
+                        return track;
+                    }
+                    
+                    if (track.status === 'error') {
+                        throw new Error('Генерация завершилась с ошибкой');
+                    }
+                    
+                    // Показываем прогресс
+                    console.log(`⏳ Статус: ${track.status} (попытка ${i + 1}/${maxAttempts})`);
+                }
+                
+            } catch (error) {
+                console.error('Ошибка проверки статуса:', error);
+            }
+            
+            // Ждем 3 секунды перед следующей проверкой
+            await this.delay(3000);
+        }
+        
+        throw new Error('Превышено время ожидания генерации (3 минуты)');
+    }
+
+    // Генерация через Replicate (альтернативный вариант)
     async generateWithReplicate(params) {
         const prompt = this.createMusicPrompt(params);
         

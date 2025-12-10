@@ -780,12 +780,69 @@ class SunoAIStudio {
     }
 
     upgradeToPremium() {
-        // In production, integrate with payment system
-        this.showNotification('Переход на Premium (интеграция с платежной системой в разработке)', 'info');
+        // Открываем SunoAPI.org для покупки подписки
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.3s ease-out;
+        `;
         
-        // Close modal if exists
-        const modal = document.querySelector('.upgrade-modal');
-        if (modal) modal.remove();
+        modal.innerHTML = `
+            <div style="background: var(--gray-800); padding: 40px; border-radius: 20px; max-width: 500px; text-align: center; position: relative;">
+                <button onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #999; font-size: 24px; cursor: pointer;">×</button>
+                
+                <h2 style="color: var(--accent); margin-bottom: 20px;">🎵 Профессиональная генерация музыки</h2>
+                
+                <div style="text-align: left; margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px;">SunoAPI.org предлагает:</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px; padding: 10px; background: var(--gray-700); border-radius: 10px;">
+                            <strong>🎼 До 4 минут</strong> - полноценные композиции
+                        </li>
+                        <li style="margin-bottom: 10px; padding: 10px; background: var(--gray-700); border-radius: 10px;">
+                            <strong>🎤 Вокал + инструменталы</strong> - любой стиль
+                        </li>
+                        <li style="margin-bottom: 10px; padding: 10px; background: var(--gray-700); border-radius: 10px;">
+                            <strong>🖼️ Обложки альбомов</strong> - автоматическая генерация
+                        </li>
+                        <li style="margin-bottom: 10px; padding: 10px; background: var(--gray-700); border-radius: 10px;">
+                            <strong>🎯 Точные промпты</strong> - лучшее понимание
+                        </li>
+                        <li style="margin-bottom: 10px; padding: 10px; background: var(--gray-700); border-radius: 10px;">
+                            <strong>💎 320kbps качество</strong> - профессиональный звук
+                        </li>
+                    </ul>
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button onclick="window.open('https://sunoapi.org/ru/billing', '_blank')" style="padding: 12px 24px; background: var(--accent); border: none; border-radius: 20px; cursor: pointer; font-weight: 600; color: white;">
+                        🚀 Получить SunoAPI токен
+                    </button>
+                    <button onclick="window.open('SUNO_API_SETUP.md', '_blank')" style="padding: 12px 24px; background: var(--gray-600); border: none; border-radius: 20px; cursor: pointer; font-weight: 600; color: white;">
+                        📖 Инструкция по настройке
+                    </button>
+                </div>
+                
+                <p style="font-size: 12px; color: #999; margin-top: 20px;">
+                    Тарифы от $9.90/месяц • Без водяных знаков • Коммерческое использование
+                </p>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close existing modal if exists
+        const existingModal = document.querySelector('.upgrade-modal');
+        if (existingModal) existingModal.remove();
     }
 
     // Utility methods
