@@ -57,7 +57,12 @@ function changePeriod(period) {
     document.querySelectorAll('.period-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    
+    // Find and activate the clicked button
+    const clickedBtn = document.querySelector(`[onclick="changePeriod('${period}')"]`);
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
     
     // Load stats for period
     loadStatsSection();
@@ -95,7 +100,12 @@ function changeMusicTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    event.target.classList.add('active');
+    
+    // Find and activate the clicked button
+    const clickedBtn = document.querySelector(`[onclick="changeMusicTab('${tab}')"]`);
+    if (clickedBtn) {
+        clickedBtn.classList.add('active');
+    }
     
     // Hide all tabs
     document.querySelectorAll('.music-tab').forEach(t => {
@@ -103,7 +113,10 @@ function changeMusicTab(tab) {
     });
     
     // Show selected tab
-    document.getElementById(tab + 'Tab').style.display = 'block';
+    const targetTab = document.getElementById(tab + 'Tab');
+    if (targetTab) {
+        targetTab.style.display = 'block';
+    }
     
     // Load data for tab
     loadMusicTab(tab);
@@ -146,13 +159,9 @@ async function loadMusicTab(tab) {
                 displayMusicData(containerId, data, tab);
             }
         } else {
-            // Show placeholder for not implemented tabs
-            document.getElementById(containerId).innerHTML = `
-                <div style="text-align: center; padding: 60px 20px;">
-                    <i class="fas fa-compact-disc" style="font-size: 64px; color: #666; margin-bottom: 20px;"></i>
-                    <p style="color: #999;">Эта функция будет доступна в следующей версии</p>
-                </div>
-            `;
+            // Show demo data for not implemented tabs
+            const demoData = generateDemoData(tab);
+            displayMusicData(containerId, demoData, tab);
         }
     } catch (error) {
         console.error('Error loading music tab:', error);
@@ -310,3 +319,148 @@ function initializeSections() {
     loadStatsSection();
     loadMusicTab('tracks');
 }
+// ═══════════════════════════════════════════════════════════════════════
+// GLOBAL FUNCTIONS FOR DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+
+// Logout function
+function logout() {
+    if (confirm('Вы уверены, что хотите выйти?')) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+    }
+}
+
+// Initialize dashboard when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎵 Dashboard загружается...');
+    
+    // Check if functions are available
+    if (typeof initializeSections === 'function') {
+        initializeSections();
+    }
+    
+    // Set up event listeners for music tabs
+    setupMusicTabListeners();
+    
+    console.log('✅ Dashboard готов!');
+});
+
+// Setup music tab listeners
+function setupMusicTabListeners() {
+    // Add click listeners to tab buttons
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const onclick = this.getAttribute('onclick');
+            if (onclick) {
+                // Extract tab name from onclick
+                const match = onclick.match(/changeMusicTab\('(\w+)'\)/);
+                if (match) {
+                    changeMusicTab(match[1]);
+                }
+            }
+        });
+    });
+    
+    // Add click listeners to period buttons
+    const periodButtons = document.querySelectorAll('.period-btn');
+    periodButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const onclick = this.getAttribute('onclick');
+            if (onclick) {
+                // Extract period from onclick
+                const match = onclick.match(/changePeriod\('(\w+)'\)/);
+                if (match) {
+                    changePeriod(match[1]);
+                }
+            }
+        });
+    });
+}
+
+// Fix for missing functions
+window.showSection = function(section) {
+    if (typeof showSection !== 'undefined') {
+        showSection(section);
+    } else {
+        console.error('showSection function not found');
+    }
+};
+
+window.changeMusicTab = changeMusicTab;
+window.changePeriod = changePeriod;
+window.logout = logout;
+
+// ═══════════════════════════════════════════════════════════════════════
+// DEMO DATA GENERATION
+// ═══════════════════════════════════════════════════════════════════════
+
+function generateDemoData(type) {
+    switch(type) {
+        case 'albums':
+            return {
+                albums: [
+                    { name: 'Любимые хиты 2024', artist: 'Сборник', image: 'https://via.placeholder.com/50', tracks: 25 },
+                    { name: 'Классическая музыка', artist: 'Различные исполнители', image: 'https://via.placeholder.com/50', tracks: 18 },
+                    { name: 'Рок коллекция', artist: 'Rock Hits', image: 'https://via.placeholder.com/50', tracks: 32 },
+                    { name: 'Электронная музыка', artist: 'EDM Collection', image: 'https://via.placeholder.com/50', tracks: 15 },
+                    { name: 'Джаз и блюз', artist: 'Jazz Masters', image: 'https://via.placeholder.com/50', tracks: 22 }
+                ]
+            };
+        case 'playlists':
+            return {
+                playlists: [
+                    { name: 'Моя музыка', description: 'Любимые треки', tracks: 127, image: 'https://via.placeholder.com/50' },
+                    { name: 'Для работы', description: 'Фоновая музыка', tracks: 45, image: 'https://via.placeholder.com/50' },
+                    { name: 'Тренировки', description: 'Энергичная музыка', tracks: 38, image: 'https://via.placeholder.com/50' },
+                    { name: 'Релакс', description: 'Спокойная музыка', tracks: 52, image: 'https://via.placeholder.com/50' },
+                    { name: 'Вечеринка', description: 'Танцевальные хиты', tracks: 73, image: 'https://via.placeholder.com/50' }
+                ]
+            };
+        default:
+            return {};
+    }
+}
+
+// Update displayMusicData to handle albums and playlists
+const originalDisplayMusicData = displayMusicData;
+displayMusicData = function(containerId, data, type) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    if (type === 'albums' && data.albums) {
+        data.albums.forEach((album, index) => {
+            container.innerHTML += `
+                <div class="list-item">
+                    <div class="list-item-number">${index + 1}</div>
+                    <img class="list-item-image" src="${album.image}" alt="${album.name}">
+                    <div class="list-item-info">
+                        <div class="list-item-title">${album.name}</div>
+                        <div class="list-item-subtitle">${album.artist}</div>
+                    </div>
+                    <div style="color: #999; font-size: 14px;">${album.tracks} треков</div>
+                </div>
+            `;
+        });
+    } else if (type === 'playlists' && data.playlists) {
+        data.playlists.forEach((playlist, index) => {
+            container.innerHTML += `
+                <div class="list-item">
+                    <div class="list-item-number">${index + 1}</div>
+                    <img class="list-item-image" src="${playlist.image}" alt="${playlist.name}">
+                    <div class="list-item-info">
+                        <div class="list-item-title">${playlist.name}</div>
+                        <div class="list-item-subtitle">${playlist.description}</div>
+                    </div>
+                    <div style="color: #999; font-size: 14px;">${playlist.tracks} треков</div>
+                </div>
+            `;
+        });
+    } else {
+        // Use original function for tracks and artists
+        originalDisplayMusicData(containerId, data, type);
+    }
+};

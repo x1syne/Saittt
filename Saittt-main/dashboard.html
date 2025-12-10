@@ -836,19 +836,43 @@
 
         // Переключение секций
         function showSection(section) {
+            console.log('🔄 Переключаемся на секцию:', section);
+            
             // Скрываем все секции
             document.querySelectorAll('[id$="Section"]').forEach(el => {
                 el.style.display = 'none';
             });
             
-            // Показываем выбранную
-            document.getElementById(section + 'Section').style.display = 'block';
+            // Показываем выбранную секцию
+            const targetSection = document.getElementById(section + 'Section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                console.log('✅ Секция показана:', section);
+            } else {
+                console.error('❌ Секция не найдена:', section + 'Section');
+            }
             
             // Обновляем активный пункт меню
             document.querySelectorAll('.sidebar-link').forEach(link => {
                 link.classList.remove('active');
             });
-            event.target.closest('.sidebar-link').classList.add('active');
+            
+            // Находим и активируем нужную ссылку
+            const activeLink = document.querySelector(`[onclick="showSection('${section}')"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+                console.log('✅ Меню обновлено для:', section);
+            }
+            
+            // Загружаем данные для секции
+            if (section === 'music') {
+                // Инициализируем музыкальную секцию
+                changeMusicTab('tracks');
+            } else if (section === 'stats') {
+                loadStatsSection();
+            } else if (section === 'profile') {
+                loadProfileSection();
+            }
             
             currentSection = section;
         }
@@ -1335,5 +1359,8 @@
             loadUserData();
         });
     </script>
+    
+    <!-- Dashboard Functions -->
+    <script src="dashboard-functions.js"></script>
 </body>
 </html>
