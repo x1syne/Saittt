@@ -418,7 +418,197 @@ app.get('/api/user-info', async (req, res) => {
     }
 });
 
-// 8. Маршрут для проверки здоровья сервера
+// 8. Получение альбомов пользователя
+app.get('/api/user-albums', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        const response = await axios.get(
+            'https://api.spotify.com/v1/me/albums?limit=20',
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        const albums = response.data.items.map(item => ({
+            id: item.album.id,
+            name: item.album.name,
+            artist: item.album.artists[0].name,
+            artists: item.album.artists.map(a => ({ name: a.name, id: a.id })),
+            image: item.album.images[0]?.url,
+            releaseDate: item.album.release_date,
+            totalTracks: item.album.total_tracks,
+            addedAt: item.added_at
+        }));
+        
+        res.json({
+            success: true,
+            count: albums.length,
+            albums: albums,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения альбомов:', error.response?.data || error.message);
+        res.status(401).json({ 
+            error: 'Не удалось получить альбомы из Spotify',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// 9. Получение плейлистов пользователя
+app.get('/api/user-playlists', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        const response = await axios.get(
+            'https://api.spotify.com/v1/me/playlists?limit=20',
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        const playlists = response.data.items.map(playlist => ({
+            id: playlist.id,
+            name: playlist.name,
+            description: playlist.description || 'Плейлист пользователя',
+            image: playlist.images[0]?.url,
+            tracks: playlist.tracks.total,
+            owner: playlist.owner.display_name,
+            public: playlist.public,
+            collaborative: playlist.collaborative
+        }));
+        
+        res.json({
+            success: true,
+            count: playlists.length,
+            playlists: playlists,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения плейлистов:', error.response?.data || error.message);
+        res.status(401).json({ 
+            error: 'Не удалось получить плейлисты из Spotify',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// 10. Получение недавно прослушанных треков
+app.get('/api/recently-played', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        const response = await axios.get(
+            'https://api.spotify.com/v1/me/player/recently-played?limit=50',
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        const tracks = response.data.items.map(item => ({
+            id: item.track.id,
+            name: item.track.name,
+            artist: item.track.artists[0].name,
+            album: item.track.album.name,
+            image: item.track.album.images[0]?.url,
+            playedAt: item.played_at,
+            duration: item.track.duration_ms
+        }));
+        
+        // Подсчитываем статистику
+        const totalMinutes = tracks.reduce((sum, track) => sum + track.duration, 0) / 60000;
+        const uniqueArtists = [...new Set(tracks.map(t => t.artist))].length;
+        const uniqueAlbums = [...new Set(tracks.map(t => t.album))].length;
+        
+        res.json({
+            success: true,
+            count: tracks.length,
+            tracks: tracks,
+            statistics: {
+                totalTracks: tracks.length,
+                totalMinutes: Math.round(totalMinutes),
+                uniqueArtists: uniqueArtists,
+                uniqueAlbums: uniqueAlbums
+            },
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения истории:', error.response?.data || error.message);
+        res.status(401).json({ 
+            error: 'Не удалось получить историю прослушиваний из Spotify',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// 11. Получение жанров пользователя
+app.get('/api/user-genres', async (req, res) => {
+    const token = req.headers.authorization?.split(' ')[1] || req.query.token;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Требуется токен авторизации' });
+    }
+    
+    try {
+        // Получаем топ артистов для анализа жанров
+        const response = await axios.get(
+            'https://api.spotify.com/v1/me/top/artists?limit=50',
+            {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }
+        );
+        
+        // Собираем все жанры
+        const allGenres = [];
+        response.data.items.forEach(artist => {
+            allGenres.push(...artist.genres);
+        });
+        
+        // Подсчитываем частоту жанров
+        const genreCount = {};
+        allGenres.forEach(genre => {
+            genreCount[genre] = (genreCount[genre] || 0) + 1;
+        });
+        
+        // Сортируем по популярности
+        const sortedGenres = Object.entries(genreCount)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 10)
+            .map(([genre, count]) => ({ genre, count }));
+        
+        res.json({
+            success: true,
+            genres: sortedGenres,
+            totalGenres: Object.keys(genreCount).length,
+            generatedAt: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения жанров:', error.response?.data || error.message);
+        res.status(401).json({ 
+            error: 'Не удалось получить жанры из Spotify',
+            details: error.response?.data?.error?.message || error.message
+        });
+    }
+});
+
+// 12. Маршрут для проверки здоровья сервера
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
